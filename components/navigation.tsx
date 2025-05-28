@@ -17,34 +17,28 @@ export function Navigation() {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/library", label: "My Library", icon: Library },
+    { href: "/library", label: "Library", icon: Library },
     { href: "/add-book", label: "Add Book", icon: Plus },
     { href: "/stats", label: "Stats", icon: BarChart3 },
   ]
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
+    <nav className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl gradient-blue glow-blue">
-              <BookOpen className="h-6 w-6 text-white" />
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-              BookNest
-            </span>
+            <span className="text-xl font-bold text-slate-900 dark:text-white">BookNest</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
-                >
+                <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400">
                   <item.icon className="h-4 w-4 mr-2" />
                   {item.label}
                 </Button>
@@ -59,44 +53,24 @@ export function Navigation() {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300"
-                >
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                   {user.photoURL ? (
-                    <img
-                      src={user.photoURL || "/placeholder.svg"}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full ring-2 ring-blue-200 dark:ring-blue-600"
-                    />
+                    <img src={user.photoURL || "/placeholder.svg"} alt="Profile" className="w-6 h-6 rounded-full" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
+                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                      <User className="h-3 w-3 text-white" />
                     </div>
                   )}
-                  <span className="hidden sm:inline text-gray-700 dark:text-gray-300 font-medium">
+                  <span className="hidden sm:inline text-slate-700 dark:text-slate-300">
                     {user.displayName || user.email?.split("@")[0] || "User"}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border-gray-200 dark:border-gray-700 rounded-xl"
-              >
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link
-                    href="/profile"
-                    className="flex items-center px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Profile & Settings
-                  </Link>
+                  <Link href="/profile">Profile & Settings</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="flex items-center px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
-                >
+                <DropdownMenuItem onClick={logout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </DropdownMenuItem>
@@ -106,19 +80,16 @@ export function Navigation() {
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="sm" className="rounded-xl">
+                <Button variant="ghost" size="sm">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg">
+              <SheetContent side="right" className="w-64">
                 <div className="flex flex-col space-y-4 mt-8">
                   {navItems.map((item) => (
                     <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
-                      >
-                        <item.icon className="h-5 w-5 mr-3" />
+                      <Button variant="ghost" className="w-full justify-start">
+                        <item.icon className="h-4 w-4 mr-2" />
                         {item.label}
                       </Button>
                     </Link>

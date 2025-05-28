@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { AuthForm } from "@/components/auth-form"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { BookOpen, BarChart3, User, Tag, FileText, Search, Star, Users, TrendingUp } from "lucide-react"
+import { BookOpen, BarChart3, Search, Tag, FileText, Users, Star, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function HomePage() {
@@ -20,29 +20,27 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-blue-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent glow-blue"></div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
       </div>
     )
   }
 
   if (user) {
-    return null // Will redirect to dashboard
+    return null
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <header className="relative z-50">
-        <div className="container mx-auto px-4 py-6">
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl gradient-blue glow-blue">
-                <BookOpen className="h-8 w-8 text-white" />
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-                BookNest
-              </h1>
+              <span className="text-xl font-bold text-slate-900 dark:text-white">BookNest</span>
             </div>
             <ThemeToggle />
           </div>
@@ -50,49 +48,53 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 dark:from-blue-400/20 dark:to-indigo-400/20"></div>
-        <div className="container mx-auto px-4 relative z-10">
+      <section className="py-20 lg:py-32">
+        <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8">
-              <h1 className="text-5xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 text-glow">
-                Your Personal Book Universe
-              </h1>
-              <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                Transform your reading journey with intelligent organization, progress tracking, and beautiful insights
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button
-                  size="lg"
-                  className="gradient-blue text-white px-8 py-4 text-lg font-semibold rounded-xl glow-blue hover:scale-105 transition-all duration-300"
-                >
-                  Start Your Journey
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-4 text-lg font-semibold rounded-xl border-2 border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                >
-                  Watch Demo
-                </Button>
-              </div>
+            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6">
+              Organize Your Books
+              <span className="text-gradient block">Beautifully</span>
+            </h1>
+            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
+              The simple, elegant way to track your reading progress, organize your library, and discover insights about
+              your reading habits.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="btn-primary text-lg px-8 py-3">
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+                View Demo
+              </Button>
             </div>
+          </div>
 
-            {/* Hero Image Placeholder */}
-            <div className="relative mt-16">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 glass-effect glow-blue float-animation">
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="h-32 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 rounded-lg flex items-center justify-center">
-                    <BookOpen className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+          {/* Hero Image */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-4">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                  <div className="h-32 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="h-32 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-800 dark:to-indigo-900 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div className="h-32 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-800 dark:to-purple-900 rounded-lg flex items-center justify-center">
-                    <Star className="h-12 w-12 text-purple-600 dark:text-purple-400" />
-                  </div>
+                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">BookNest Dashboard Preview</p>
+                <div className="space-y-4">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                  <div className="h-32 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                </div>
+                <div className="space-y-4">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                  <div className="h-32 bg-violet-100 dark:bg-violet-900 rounded-lg flex items-center justify-center">
+                    <Star className="h-8 w-8 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -100,7 +102,7 @@ export default function HomePage() {
       </section>
 
       {/* Auth Section */}
-      <section className="py-16 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+      <section className="py-16 bg-white dark:bg-slate-800">
         <div className="container mx-auto px-4">
           <div className="max-w-md mx-auto">
             <AuthForm />
@@ -108,190 +110,97 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-blue-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-              How BookNest Works
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Four simple steps to transform your reading experience
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                step: "01",
-                title: "Sign Up",
-                description: "Create your account in seconds with Google or email",
-                icon: User,
-                gradient: "gradient-blue",
-              },
-              {
-                step: "02",
-                title: "Add Books",
-                description: "Build your digital library with physical and digital books",
-                icon: BookOpen,
-                gradient: "gradient-teal",
-              },
-              {
-                step: "03",
-                title: "Track Progress",
-                description: "Monitor reading progress and take notes as you go",
-                icon: TrendingUp,
-                gradient: "gradient-purple",
-              },
-              {
-                step: "04",
-                title: "View Stats",
-                description: "Get insights into your reading habits and achievements",
-                icon: BarChart3,
-                gradient: "gradient-pink",
-              },
-            ].map((item, index) => (
-              <div key={index} className="text-center group">
-                <div
-                  className={`w-20 h-20 ${item.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 glow-blue group-hover:scale-110 transition-all duration-300`}
-                >
-                  <item.icon className="h-10 w-10 text-white" />
-                </div>
-                <div className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-2">STEP {item.step}</div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{item.title}</h3>
-                <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
+      {/* Features */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-              Everything You Need
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+              Everything you need to manage your books
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">Powerful features designed for book lovers</p>
+            <p className="text-lg text-slate-600 dark:text-slate-400">Simple tools for serious readers</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
-                title: "Smart Organization",
-                description: "Organize books with custom tags, locations, and smart filtering",
                 icon: BookOpen,
-                gradient: "from-blue-500 to-blue-600",
+                title: "Smart Organization",
+                description: "Organize your physical and digital books with custom tags and categories.",
+                color: "text-blue-600 dark:text-blue-400",
+                bg: "bg-blue-100 dark:bg-blue-900",
               },
               {
-                title: "Progress Tracking",
-                description: "Visual progress bars and detailed reading statistics",
                 icon: BarChart3,
-                gradient: "from-indigo-500 to-indigo-600",
+                title: "Reading Analytics",
+                description: "Track your progress with beautiful charts and reading statistics.",
+                color: "text-emerald-600 dark:text-emerald-400",
+                bg: "bg-emerald-100 dark:bg-emerald-900",
               },
               {
-                title: "Note Taking",
-                description: "Add notes with page numbers to capture your thoughts",
                 icon: FileText,
-                gradient: "from-purple-500 to-purple-600",
+                title: "Note Taking",
+                description: "Capture your thoughts and highlights with page-specific notes.",
+                color: "text-violet-600 dark:text-violet-400",
+                bg: "bg-violet-100 dark:bg-violet-900",
               },
               {
-                title: "Smart Tags",
-                description: "Discover patterns in your reading with intelligent tagging",
-                icon: Tag,
-                gradient: "from-teal-500 to-teal-600",
-              },
-              {
-                title: "Quick Search",
-                description: "Find any book instantly by title, author, or tags",
                 icon: Search,
-                gradient: "from-pink-500 to-pink-600",
+                title: "Quick Search",
+                description: "Find any book instantly by title, author, genre, or tags.",
+                color: "text-amber-600 dark:text-amber-400",
+                bg: "bg-amber-100 dark:bg-amber-900",
               },
               {
-                title: "Reading Insights",
-                description: "Beautiful charts and statistics about your reading habits",
-                icon: TrendingUp,
-                gradient: "from-orange-500 to-orange-600",
+                icon: Tag,
+                title: "Smart Tagging",
+                description: "Create custom tags to organize books by any criteria you choose.",
+                color: "text-rose-600 dark:text-rose-400",
+                bg: "bg-rose-100 dark:bg-rose-900",
+              },
+              {
+                icon: Users,
+                title: "Reading Goals",
+                description: "Set and track reading goals to stay motivated throughout the year.",
+                color: "text-indigo-600 dark:text-indigo-400",
+                bg: "bg-indigo-100 dark:bg-indigo-900",
               },
             ].map((feature, index) => (
-              <div key={index} className="group">
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600 glow-blue">
-                  <div
-                    className={`w-16 h-16 bg-gradient-to-r ${feature.gradient} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <feature.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{feature.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
+              <div key={index} className="card-elevated rounded-xl p-6">
+                <div className={`w-12 h-12 ${feature.bg} rounded-lg flex items-center justify-center mb-4`}>
+                  <feature.icon className={`h-6 w-6 ${feature.color}`} />
                 </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{feature.title}</h3>
+                <p className="text-slate-600 dark:text-slate-400">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-800 dark:to-indigo-800">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-white text-glow">Trusted by Book Lovers</h2>
-            <p className="text-xl text-blue-100">Join thousands of readers organizing their libraries</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { number: "10,000+", label: "Books Organized", icon: BookOpen },
-              { number: "5,000+", label: "Active Readers", icon: Users },
-              { number: "50,000+", label: "Pages Tracked", icon: TrendingUp },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 glow-blue-dark">
-                  <stat.icon className="h-8 w-8 text-white" />
-                </div>
-                <div className="text-4xl font-bold text-white mb-2 text-glow-dark">{stat.number}</div>
-                <div className="text-blue-100">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
+      {/* CTA */}
+      <section className="py-20 bg-blue-600 dark:bg-blue-700">
         <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-              Ready to Transform Your Reading?
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Start organizing your books today and discover insights about your reading journey
-            </p>
-            <Button
-              size="lg"
-              className="gradient-blue text-white px-12 py-4 text-xl font-semibold rounded-xl glow-blue hover:scale-105 transition-all duration-300"
-            >
-              Start for Free
-            </Button>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">No credit card required • Free forever</p>
-          </div>
+          <h2 className="text-3xl font-bold text-white mb-4">Ready to organize your library?</h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Join thousands of readers who have transformed their reading experience with BookNest.
+          </p>
+          <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 text-lg px-8 py-3">
+            Start Reading Better Today
+          </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 dark:bg-slate-950 py-12">
+      <footer className="bg-slate-900 py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="p-2 rounded-xl gradient-blue glow-blue">
-                <BookOpen className="h-6 w-6 text-white" />
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">BookNest</span>
+              <span className="text-lg font-semibold text-white">BookNest</span>
             </div>
-            <div className="text-gray-400 text-center md:text-right">
-              <p>© 2024 BookNest. Built for book lovers, by book lovers.</p>
-              <p className="text-sm mt-1">Transform your reading journey today</p>
-            </div>
+            <p className="text-slate-400">© 2024 BookNest. Made for book lovers.</p>
           </div>
         </div>
       </footer>

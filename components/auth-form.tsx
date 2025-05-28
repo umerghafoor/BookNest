@@ -125,12 +125,10 @@ export function AuthForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-0 shadow-2xl glow-blue">
+    <Card className="w-full max-w-md mx-auto card-elevated">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-          Join BookNest
-        </CardTitle>
-        <CardDescription className="text-gray-600 dark:text-gray-300">Start your reading journey today</CardDescription>
+        <CardTitle className="text-2xl">Join BookNest</CardTitle>
+        <CardDescription>Start organizing your reading journey</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Google Sign In Button */}
@@ -138,13 +136,13 @@ export function AuthForm() {
           onClick={handleGoogleSignIn}
           disabled={googleLoading || loading}
           variant="outline"
-          className="w-full py-6 text-lg font-semibold rounded-xl border-2 border-blue-200 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 glow-blue transition-all duration-300"
+          className="w-full"
           type="button"
         >
           {googleLoading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent mr-3"></div>
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-transparent mr-2"></div>
           ) : (
-            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -168,37 +166,23 @@ export function AuthForm() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <Separator className="w-full bg-gray-200 dark:bg-gray-600" />
+            <Separator className="w-full" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white dark:bg-slate-800 px-4 text-gray-500 dark:text-gray-400 font-medium">
-              Or continue with email
-            </span>
+            <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
           </div>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-slate-700 rounded-xl p-1">
-            <TabsTrigger
-              value="signin"
-              className="rounded-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
-            >
-              Sign In
-            </TabsTrigger>
-            <TabsTrigger
-              value="signup"
-              className="rounded-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
-            >
-              Sign Up
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 dark:text-gray-300 font-medium">
-                  Email
-                </Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -206,14 +190,10 @@ export function AuthForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading || googleLoading}
-                  className="py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700"
-                  placeholder="Enter your email"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium">
-                  Password
-                </Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -221,23 +201,10 @@ export function AuthForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading || googleLoading}
-                  className="py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700"
-                  placeholder="Enter your password"
                 />
               </div>
-              <Button
-                type="submit"
-                className="w-full py-3 text-lg font-semibold rounded-xl gradient-blue text-white glow-blue hover:scale-105 transition-all duration-300"
-                disabled={loading || googleLoading}
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                    Signing in...
-                  </div>
-                ) : (
-                  "Sign In"
-                )}
+              <Button type="submit" className="w-full btn-primary" disabled={loading || googleLoading}>
+                {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
           </TabsContent>
@@ -245,9 +212,7 @@ export function AuthForm() {
           <TabsContent value="signup">
             <form onSubmit={handleSignUp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="signup-email" className="text-gray-700 dark:text-gray-300 font-medium">
-                  Email
-                </Label>
+                <Label htmlFor="signup-email">Email</Label>
                 <Input
                   id="signup-email"
                   type="email"
@@ -255,14 +220,10 @@ export function AuthForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading || googleLoading}
-                  className="py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700"
-                  placeholder="Enter your email"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="signup-password" className="text-gray-700 dark:text-gray-300 font-medium">
-                  Password
-                </Label>
+                <Label htmlFor="signup-password">Password</Label>
                 <Input
                   id="signup-password"
                   type="password"
@@ -271,23 +232,10 @@ export function AuthForm() {
                   required
                   minLength={6}
                   disabled={loading || googleLoading}
-                  className="py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700"
-                  placeholder="Create a password (min 6 characters)"
                 />
               </div>
-              <Button
-                type="submit"
-                className="w-full py-3 text-lg font-semibold rounded-xl gradient-blue text-white glow-blue hover:scale-105 transition-all duration-300"
-                disabled={loading || googleLoading}
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                    Creating account...
-                  </div>
-                ) : (
-                  "Create Account"
-                )}
+              <Button type="submit" className="w-full btn-primary" disabled={loading || googleLoading}>
+                {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
           </TabsContent>
