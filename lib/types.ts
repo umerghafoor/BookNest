@@ -20,6 +20,7 @@ export interface Book {
     returnDate?: string
   }
   notes: Note[]
+  isPublic?: boolean // New field for public visibility
   createdAt: Date
   updatedAt: Date
 }
