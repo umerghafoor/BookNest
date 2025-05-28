@@ -13,7 +13,7 @@ import { useEffect, useState } from "react"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
-import "../styles/components.css"
+import "@/styles/components.css"
 
 export default function LibraryPage() {
   const { user } = useAuth()

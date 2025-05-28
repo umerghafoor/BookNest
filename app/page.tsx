@@ -7,7 +7,7 @@ import { AuthForm } from "@/components/auth-form"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { BookOpen, BarChart3, Search, Tag, FileText, Users, Star, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import "../styles/components.css"
+import "@/styles/components.css"
 
 export default function HomePage() {
   const { user, loading } = useAuth()
