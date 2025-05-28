@@ -4,14 +4,15 @@ import { getFirestore } from "firebase/firestore"
 import { getStorage } from "firebase/storage"
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD3NmXFj9DEJV2iaiz76rdbCU4UeOPvMEo",
-  authDomain: "booknest-ca591.firebaseapp.com",
-  projectId: "booknest-ca591",
-  storageBucket: "booknest-ca591.firebasestorage.app",
-  messagingSenderId: "774297155083",
-  appId: "1:774297155083:web:2c61ec68942f9d20ae790e",
-  measurementId: "G-68BHKGZW3F"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
 
