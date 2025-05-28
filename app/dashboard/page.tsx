@@ -153,7 +153,7 @@ export default function DashboardPage() {
         )}
 
         {/* Main Content */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Quick Actions */}
           <div className="lg:col-span-1">
             <Card className="card-clean">
@@ -186,6 +186,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
 
           {/* Recent Books */}
           <div className="lg:col-span-2">
