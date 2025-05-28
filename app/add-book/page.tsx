@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { mockFirestore } from "@/lib/mock-data"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
 import { Plus, X } from "lucide-react"
 
@@ -88,27 +89,29 @@ export default function AddBookPage() {
 
     setLoading(true)
     try {
-      const bookData: Omit<Book, "id"> = {
+      const bookData = {
         userId: user.uid,
         title: formData.title,
-        subtitle: formData.subtitle.trim() || undefined,
+        subtitle: formData.subtitle.trim() || null,
         authors: formData.authors.filter((author) => author.trim()),
-        genre: formData.genre.trim() || undefined,
-        isbn: formData.isbn.trim() || undefined,
+        genre: formData.genre.trim() || null,
+        isbn: formData.isbn.trim() || null,
         format: formData.format,
         status: formData.status,
-        totalPages: formData.totalPages ? Number.parseInt(formData.totalPages) : undefined,
-        pagesRead: formData.pagesRead ? Number.parseInt(formData.pagesRead) : undefined,
-        locations: formData.format === "physical" ? formData.locations.filter((loc) => loc.trim()) : undefined,
-        links: formData.format === "ebook" ? formData.links.filter((link) => link.trim()) : undefined,
+        totalPages: formData.totalPages ? Number.parseInt(formData.totalPages) : null,
+        pagesRead: formData.pagesRead ? Number.parseInt(formData.pagesRead) : null,
+        locations: formData.format === "physical" ? formData.locations.filter((loc) => loc.trim()) : null,
+        links: formData.format === "ebook" ? formData.links.filter((link) => link.trim()) : null,
         tags: formData.tags,
         notes: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }
 
-      // Use mock data for demo mode
-      await mockFirestore.addBook(bookData)
+      // Remove null fields before sending to Firestore
+      const cleanBookData = Object.fromEntries(Object.entries(bookData).filter(([_, value]) => value !== null))
+
+      await addDoc(collection(db, "books"), cleanBookData)
 
       toast({
         title: "Book added!",

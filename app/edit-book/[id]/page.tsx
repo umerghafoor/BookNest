@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useAuth } from "@/components/auth-provider"
 import { Navigation } from "@/components/navigation"
@@ -18,7 +18,8 @@ import { db } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
 import { Plus, X, Trash2 } from "lucide-react"
 
-export default function EditBookPage({ params }: { params: { id: string } }) {
+export default function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = React.use(params)
   const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
@@ -44,16 +45,16 @@ export default function EditBookPage({ params }: { params: { id: string } }) {
   const [initialLoading, setInitialLoading] = useState(true)
 
   useEffect(() => {
-    if (user && params.id) {
+    if (user && unwrappedParams.id) {
       loadBook()
     }
-  }, [user, params.id])
+  }, [user, unwrappedParams.id])
 
   const loadBook = async () => {
     if (!user) return
 
     try {
-      const bookDoc = await getDoc(doc(db, "books", params.id))
+      const bookDoc = await getDoc(doc(db, "books", unwrappedParams.id))
       if (bookDoc.exists()) {
         const bookData = { id: bookDoc.id, ...bookDoc.data() } as Book
         if (bookData.userId === user.uid) {

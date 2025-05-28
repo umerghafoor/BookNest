@@ -16,8 +16,10 @@ import { db } from "@/lib/firebase"
 import type { Book, Note } from "@/lib/types"
 import { BookOpen, Edit, Plus, ExternalLink, MapPin, Calendar, User } from "lucide-react"
 import Link from "next/link"
+import React from "react"
 
-export default function BookDetailsPage({ params }: { params: { id: string } }) {
+export default function BookDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = React.use(params)
   const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
@@ -28,16 +30,16 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
   const [updatedProgress, setUpdatedProgress] = useState({ pagesRead: "" })
 
   useEffect(() => {
-    if (user && params.id) {
+    if (user && unwrappedParams.id) {
       loadBook()
     }
-  }, [user, params.id])
+  }, [user, unwrappedParams.id])
 
   const loadBook = async () => {
     if (!user) return
 
     try {
-      const bookDoc = await getDoc(doc(db, "books", params.id))
+      const bookDoc = await getDoc(doc(db, "books", unwrappedParams.id))
       if (bookDoc.exists()) {
         const bookData = { id: bookDoc.id, ...bookDoc.data() } as Book
         if (bookData.userId === user.uid) {

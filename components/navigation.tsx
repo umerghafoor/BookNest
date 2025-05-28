@@ -51,9 +51,13 @@ export function Navigation() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                Demo User
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                {user.photoURL ? (
+                  <img src={user.photoURL || "/placeholder.svg"} alt="Profile" className="w-6 h-6 rounded-full" />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">{user.displayName || user.email?.split("@")[0] || "User"}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
