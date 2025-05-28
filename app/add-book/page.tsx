@@ -19,7 +19,7 @@ import { db, storage } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
 import { Plus, X, Upload, FileText, ImageIcon } from "lucide-react"
 import { CSVUploader } from "@/components/csv-uploader"
-import { ThumbnailUploader } from "@/components/thumbnail-uploader"
+// import { ThumbnailUploader } from "@/components/thumbnail-uploader"
 import { generateThumbnail } from "@/lib/thumbnail-utils"
 
 export default function AddBookPage() {
@@ -198,14 +198,14 @@ export default function AddBookPage() {
                     <ImageIcon className="h-5 w-5" />
                     Book Cover
                   </CardTitle>
-                  <CardDescription>Upload a cover image for your book (optional)</CardDescription>
+                  <CardDescription>Upload a cover image for your book (Coming Soon)</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ThumbnailUploader
+                  {/* <ThumbnailUploader
                     onThumbnailSelect={handleThumbnailSelect}
                     preview={thumbnailPreview}
                     bookTitle={formData.title}
-                  />
+                  /> */}
                 </CardContent>
               </Card>
 

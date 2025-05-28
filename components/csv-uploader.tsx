@@ -271,11 +271,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                     <SelectValue placeholder="Select column for title" />
                   </SelectTrigger>
                   <SelectContent>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -291,11 +293,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -311,11 +315,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -331,11 +337,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -348,11 +356,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -368,11 +378,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -388,11 +400,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -408,11 +422,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -428,11 +444,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -445,11 +463,13 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="skip">Skip this field</SelectItem>
-                    {csvHeaders.map((header) => (
-                      <SelectItem key={header} value={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
+                    {csvHeaders
+                      .filter((header) => header.trim() !== "")
+                      .map((header, idx) => (
+                        <SelectItem key={`${header}-${idx}`} value={header}>
+                          {header}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
