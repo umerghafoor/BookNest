@@ -1,0 +1,158 @@
+/* Clean Design System - No Yellow/Amber Colors */
+
+/* Base Components */
+.card-clean {
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+.btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium px-4 py-2 rounded-lg transition-colors duration-200;
+}
+
+/* Stat Cards - Only Blue, Emerald, Violet */
+.stat-card {
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 hover:shadow-md transition-all duration-200;
+}
+
+.stat-card-blue {
+  @apply bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800;
+}
+
+.stat-card-emerald {
+  @apply bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800;
+}
+
+.stat-card-violet {
+  @apply bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800;
+}
+
+.stat-card-slate {
+  @apply bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700;
+}
+
+/* Text Styles */
+.text-gradient-blue {
+  @apply bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent;
+}
+
+.text-gradient-emerald {
+  @apply bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-400 dark:to-emerald-600 bg-clip-text text-transparent;
+}
+
+.text-gradient-violet {
+  @apply bg-gradient-to-r from-violet-600 to-violet-800 dark:from-violet-400 dark:to-violet-600 bg-clip-text text-transparent;
+}
+
+/* Layout */
+.page-container {
+  @apply min-h-screen bg-slate-50 dark:bg-slate-900;
+}
+
+.content-container {
+  @apply container mx-auto px-4 py-8;
+}
+
+.page-header {
+  @apply mb-8;
+}
+
+.page-title {
+  @apply text-3xl font-bold text-slate-900 dark:text-white mb-2;
+}
+
+.page-description {
+  @apply text-slate-600 dark:text-slate-400;
+}
+
+/* Form Elements */
+.form-section {
+  @apply space-y-6;
+}
+
+.form-card {
+  @apply card-clean p-6;
+}
+
+.form-header {
+  @apply mb-6;
+}
+
+.form-title {
+  @apply text-lg font-semibold text-slate-900 dark:text-white mb-2;
+}
+
+.form-description {
+  @apply text-sm text-slate-600 dark:text-slate-400;
+}
+
+/* Book Cards */
+.book-card {
+  @apply card-clean p-4 hover:shadow-lg transition-all duration-200 cursor-pointer;
+}
+
+.book-card-grid {
+  @apply grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+.book-card-list {
+  @apply space-y-4;
+}
+
+/* View Toggle */
+.view-toggle {
+  @apply flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 rounded-lg p-1;
+}
+
+.view-toggle-btn {
+  @apply px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200;
+}
+
+.view-toggle-btn-active {
+  @apply bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm;
+}
+
+.view-toggle-btn-inactive {
+  @apply text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200;
+}
+
+/* Progress Bars */
+.progress-bar {
+  @apply w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply bg-blue-600 h-2 rounded-full transition-all duration-300;
+}
+
+/* Status Badges */
+.status-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-reading {
+  @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+}
+
+.status-read {
+  @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200;
+}
+
+.status-will-read {
+  @apply bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200;
+}
+
+.status-on-hold {
+  @apply bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200;
+}
+
+.status-abandoned {
+  @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+}
+
+.status-not-read {
+  @apply bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200;
+}

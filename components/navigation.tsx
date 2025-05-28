@@ -8,6 +8,7 @@ import { BookOpen, Home, Library, Plus, BarChart3, User, LogOut, Menu } from "lu
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useState } from "react"
+import "../styles/components.css"
 
 export function Navigation() {
   const { user, logout } = useAuth()

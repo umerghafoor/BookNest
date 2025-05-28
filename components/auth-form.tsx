@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
+import "../styles/components.css"
 
 export function AuthForm() {
   const [email, setEmail] = useState("")
@@ -125,9 +126,9 @@ export function AuthForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto card-elevated">
+    <Card className="w-full max-w-md mx-auto card-clean">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Join BookNest</CardTitle>
+        <CardTitle className="text-2xl text-slate-900 dark:text-white">Join BookNest</CardTitle>
         <CardDescription>Start organizing your reading journey</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

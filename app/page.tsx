@@ -7,6 +7,7 @@ import { AuthForm } from "@/components/auth-form"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { BookOpen, BarChart3, Search, Tag, FileText, Users, Star, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import "../styles/components.css"
 
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -20,7 +21,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="page-container flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
       </div>
     )
@@ -31,7 +32,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="page-container">
       {/* Header */}
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-4 py-4">
@@ -53,9 +54,9 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6">
               Organize Your Books
-              <span className="text-gradient block">Beautifully</span>
+              <span className="text-gradient-blue block">Beautifully</span>
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto leading-relaxed">
               The simple, elegant way to track your reading progress, organize your library, and discover insights about
               your reading habits.
             </p>
@@ -64,33 +65,33 @@ export default function HomePage() {
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-3 border-slate-300 dark:border-slate-600">
                 View Demo
               </Button>
             </div>
           </div>
 
-          {/* Hero Image */}
+          {/* Hero Preview */}
           <div className="mt-16 max-w-4xl mx-auto">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
+            <div className="card-clean p-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-4">
                   <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-                  <div className="h-32 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                  <div className="h-32 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
                     <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
                 </div>
                 <div className="space-y-4">
                   <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
-                  <div className="h-32 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center">
+                  <div className="h-32 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg flex items-center justify-center">
                     <BarChart3 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
                 </div>
                 <div className="space-y-4">
                   <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
-                  <div className="h-32 bg-violet-100 dark:bg-violet-900 rounded-lg flex items-center justify-center">
+                  <div className="h-32 bg-violet-100 dark:bg-violet-900/50 rounded-lg flex items-center justify-center">
                     <Star className="h-8 w-8 text-violet-600 dark:text-violet-400" />
                   </div>
                   <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
@@ -127,45 +128,45 @@ export default function HomePage() {
                 title: "Smart Organization",
                 description: "Organize your physical and digital books with custom tags and categories.",
                 color: "text-blue-600 dark:text-blue-400",
-                bg: "bg-blue-100 dark:bg-blue-900",
+                bg: "bg-blue-100 dark:bg-blue-900/50",
               },
               {
                 icon: BarChart3,
                 title: "Reading Analytics",
                 description: "Track your progress with beautiful charts and reading statistics.",
                 color: "text-emerald-600 dark:text-emerald-400",
-                bg: "bg-emerald-100 dark:bg-emerald-900",
+                bg: "bg-emerald-100 dark:bg-emerald-900/50",
               },
               {
                 icon: FileText,
                 title: "Note Taking",
                 description: "Capture your thoughts and highlights with page-specific notes.",
                 color: "text-violet-600 dark:text-violet-400",
-                bg: "bg-violet-100 dark:bg-violet-900",
+                bg: "bg-violet-100 dark:bg-violet-900/50",
               },
               {
                 icon: Search,
                 title: "Quick Search",
                 description: "Find any book instantly by title, author, genre, or tags.",
-                color: "text-amber-600 dark:text-amber-400",
-                bg: "bg-amber-100 dark:bg-amber-900",
+                color: "text-slate-600 dark:text-slate-400",
+                bg: "bg-slate-100 dark:bg-slate-800",
               },
               {
                 icon: Tag,
                 title: "Smart Tagging",
                 description: "Create custom tags to organize books by any criteria you choose.",
-                color: "text-rose-600 dark:text-rose-400",
-                bg: "bg-rose-100 dark:bg-rose-900",
+                color: "text-blue-600 dark:text-blue-400",
+                bg: "bg-blue-100 dark:bg-blue-900/50",
               },
               {
                 icon: Users,
                 title: "Reading Goals",
                 description: "Set and track reading goals to stay motivated throughout the year.",
-                color: "text-indigo-600 dark:text-indigo-400",
-                bg: "bg-indigo-100 dark:bg-indigo-900",
+                color: "text-emerald-600 dark:text-emerald-400",
+                bg: "bg-emerald-100 dark:bg-emerald-900/50",
               },
             ].map((feature, index) => (
-              <div key={index} className="card-elevated rounded-xl p-6">
+              <div key={index} className="card-clean p-6">
                 <div className={`w-12 h-12 ${feature.bg} rounded-lg flex items-center justify-center mb-4`}>
                   <feature.icon className={`h-6 w-6 ${feature.color}`} />
                 </div>

@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Search, Plus } from "lucide-react"
+import { BookOpen, Search, Plus, Grid3X3, List, Filter } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
+import "../styles/components.css"
 
 export default function LibraryPage() {
   const { user } = useAuth()
@@ -22,6 +23,7 @@ export default function LibraryPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [formatFilter, setFormatFilter] = useState("all")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
   useEffect(() => {
     if (user) {
@@ -77,20 +79,20 @@ export default function LibraryPage() {
     setFilteredBooks(filtered)
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "reading":
-        return "bg-blue-100 text-blue-800"
+        return "status-reading"
       case "read":
-        return "bg-green-100 text-green-800"
+        return "status-read"
       case "will-read":
-        return "bg-yellow-100 text-yellow-800"
+        return "status-will-read"
       case "on-hold":
-        return "bg-orange-100 text-orange-800"
+        return "status-on-hold"
       case "abandoned":
-        return "bg-red-100 text-red-800"
+        return "status-abandoned"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "status-not-read"
     }
   }
 
@@ -102,29 +104,31 @@ export default function LibraryPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="page-container">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">My Library</h1>
-            <p className="text-muted-foreground">
+      <div className="content-container">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8">
+          <div className="page-header">
+            <h1 className="page-title">My Library</h1>
+            <p className="page-description">
               {filteredBooks.length} of {books.length} books
             </p>
           </div>
           <Link href="/add-book">
-            <Button>
+            <Button className="btn-primary">
               <Plus className="h-4 w-4 mr-2" />
               Add Book
             </Button>
           </Link>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        {/* Filters and View Toggle */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search books, authors, or tags..."
               value={searchTerm}
@@ -132,44 +136,67 @@ export default function LibraryPage() {
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="not-read">Not Read</SelectItem>
-              <SelectItem value="reading">Reading</SelectItem>
-              <SelectItem value="read">Read</SelectItem>
-              <SelectItem value="will-read">Will Read</SelectItem>
-              <SelectItem value="on-hold">On Hold</SelectItem>
-              <SelectItem value="abandoned">Abandoned</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={formatFilter} onValueChange={setFormatFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Formats</SelectItem>
-              <SelectItem value="physical">Physical</SelectItem>
-              <SelectItem value="ebook">eBook</SelectItem>
-              <SelectItem value="audiobook">Audiobook</SelectItem>
-            </SelectContent>
-          </Select>
+
+          {/* Filters */}
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="not-read">Not Read</SelectItem>
+                <SelectItem value="reading">Reading</SelectItem>
+                <SelectItem value="read">Read</SelectItem>
+                <SelectItem value="will-read">Will Read</SelectItem>
+                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="abandoned">Abandoned</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={formatFilter} onValueChange={setFormatFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Formats</SelectItem>
+                <SelectItem value="physical">Physical</SelectItem>
+                <SelectItem value="ebook">eBook</SelectItem>
+                <SelectItem value="audiobook">Audiobook</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* View Toggle */}
+            <div className="view-toggle">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`view-toggle-btn ${viewMode === "grid" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`view-toggle-btn ${viewMode === "list" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
+        {/* Books Display */}
         {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className={viewMode === "grid" ? "book-card-grid" : "book-card-list"}>
             {[...Array(6)].map((_, i) => (
-              <Card key={i}>
+              <Card key={i} className="card-clean animate-pulse">
                 <CardContent className="p-6">
                   <div className="flex space-x-4">
-                    <div className="w-16 h-20 bg-muted rounded animate-pulse"></div>
+                    <div className="w-16 h-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
-                      <div className="h-3 bg-muted rounded w-1/2 animate-pulse"></div>
-                      <div className="h-3 bg-muted rounded w-1/4 animate-pulse"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
                     </div>
                   </div>
                 </CardContent>
@@ -178,18 +205,18 @@ export default function LibraryPage() {
           </div>
         ) : filteredBooks.length === 0 ? (
           <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
+            <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">
               {books.length === 0 ? "No books yet" : "No books match your filters"}
             </h3>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-slate-500 dark:text-slate-400 mb-4">
               {books.length === 0
                 ? "Start building your library by adding your first book"
                 : "Try adjusting your search or filter criteria"}
             </p>
             {books.length === 0 && (
               <Link href="/add-book">
-                <Button>
+                <Button className="btn-primary">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First Book
                 </Button>
@@ -197,32 +224,30 @@ export default function LibraryPage() {
             )}
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className={viewMode === "grid" ? "book-card-grid" : "book-card-list"}>
             {filteredBooks.map((book) => (
               <Link key={book.id} href={`/book/${book.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex space-x-4">
-                      <div className="w-16 h-20 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
-                        {book.coverImage ? (
-                          <img
-                            src={book.coverImage || "/placeholder.svg"}
-                            alt={book.title}
-                            className="w-full h-full object-cover rounded"
-                          />
-                        ) : (
-                          <BookOpen className="h-8 w-8 text-primary" />
-                        )}
+                <Card className="book-card">
+                  <CardContent className={viewMode === "grid" ? "p-4" : "p-4"}>
+                    <div className={`flex ${viewMode === "grid" ? "flex-col" : "flex-row"} space-x-4`}>
+                      <div
+                        className={`${viewMode === "grid" ? "w-full h-32 mb-4" : "w-16 h-20"} bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0`}
+                      >
+                        <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm mb-1 truncate">{book.title}</h3>
+                        <h3 className="font-semibold text-sm mb-1 truncate text-slate-900 dark:text-white">
+                          {book.title}
+                        </h3>
                         {book.subtitle && (
-                          <p className="text-xs text-muted-foreground mb-1 truncate">{book.subtitle}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 truncate">{book.subtitle}</p>
                         )}
-                        <p className="text-xs text-muted-foreground mb-2 truncate">{book.authors.join(", ")}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 truncate">
+                          {book.authors.join(", ")}
+                        </p>
 
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary" className={`text-xs ${getStatusColor(book.status)}`}>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className={`text-xs ${getStatusBadgeClass(book.status)}`}>
                             {book.status.replace("-", " ")}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
@@ -233,16 +258,13 @@ export default function LibraryPage() {
                         {book.status === "reading" && book.totalPages && book.pagesRead && (
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs">
-                              <span>
+                              <span className="text-slate-500 dark:text-slate-400">
                                 {book.pagesRead} / {book.totalPages} pages
                               </span>
-                              <span>{getProgressPercentage(book)}%</span>
+                              <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-1">
-                              <div
-                                className="bg-primary h-1 rounded-full"
-                                style={{ width: `${getProgressPercentage(book)}%` }}
-                              ></div>
+                            <div className="progress-bar">
+                              <div className="progress-fill" style={{ width: `${getProgressPercentage(book)}%` }}></div>
                             </div>
                           </div>
                         )}

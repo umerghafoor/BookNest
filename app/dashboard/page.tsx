@@ -4,12 +4,13 @@ import { useAuth } from "@/components/auth-provider"
 import { Navigation } from "@/components/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Plus, TrendingUp, Clock, Target, Calendar } from "lucide-react"
+import { BookOpen, Plus, TrendingUp, Clock, Target, Calendar, Users } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
+import "../styles/components.css"
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -68,19 +69,34 @@ export default function DashboardPage() {
     return Math.round(((book.pagesRead || 0) / book.totalPages) * 100)
   }
 
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "reading":
+        return "status-reading"
+      case "read":
+        return "status-read"
+      case "will-read":
+        return "status-will-read"
+      case "on-hold":
+        return "status-on-hold"
+      case "abandoned":
+        return "status-abandoned"
+      default:
+        return "status-not-read"
+    }
+  }
+
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="page-container">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="content-container">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Welcome back, {user.displayName || user.email?.split("@")[0] || "Reader"}!
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">Here's what's happening with your reading journey.</p>
+        <div className="page-header">
+          <h1 className="page-title">Welcome back, {user.displayName || user.email?.split("@")[0] || "Reader"}!</h1>
+          <p className="page-description">Here's what's happening with your reading journey.</p>
         </div>
 
         {/* Stats Grid */}
@@ -123,10 +139,10 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-600 dark:text-slate-400">completed this year</p>
             </div>
 
-            <div className="stat-card stat-card-amber">
+            <div className="stat-card stat-card-slate">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Pages Read</h3>
-                <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <TrendingUp className="h-5 w-5 text-slate-600 dark:text-slate-400" />
               </div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
                 {stats.totalPages.toLocaleString()}
@@ -140,9 +156,12 @@ export default function DashboardPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Quick Actions */}
           <div className="lg:col-span-1">
-            <Card className="card-elevated">
+            <Card className="card-clean">
               <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                <CardTitle className="text-lg flex items-center">
+                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+                  Quick Actions
+                </CardTitle>
                 <CardDescription>Manage your reading collection</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -170,10 +189,10 @@ export default function DashboardPage() {
 
           {/* Recent Books */}
           <div className="lg:col-span-2">
-            <Card className="card-elevated">
+            <Card className="card-clean">
               <CardHeader>
                 <div className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                   <div>
                     <CardTitle className="text-lg">Recent Activity</CardTitle>
                     <CardDescription>Your recently updated books</CardDescription>
@@ -199,7 +218,7 @@ export default function DashboardPage() {
                     {recentBooks.slice(0, 4).map((book) => (
                       <Link key={book.id} href={`/book/${book.id}`}>
                         <div className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                          <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900 rounded flex items-center justify-center flex-shrink-0">
+                          <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0">
                             <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -213,16 +232,18 @@ export default function DashboardPage() {
                                   <span>Progress</span>
                                   <span>{getProgressPercentage(book)}%</span>
                                 </div>
-                                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                                <div className="progress-bar">
                                   <div
-                                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                    className="progress-fill"
                                     style={{ width: `${getProgressPercentage(book)}%` }}
                                   ></div>
                                 </div>
                               </div>
                             )}
                           </div>
-                          <div className="text-xs text-slate-400 capitalize">{book.status.replace("-", " ")}</div>
+                          <div className={`status-badge ${getStatusBadgeClass(book.status)}`}>
+                            {book.status.replace("-", " ")}
+                          </div>
                         </div>
                       </Link>
                     ))}
