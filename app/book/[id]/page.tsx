@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Book, Note } from "@/lib/types"
-import { BookOpen, Edit, Plus, ExternalLink, MapPin, Calendar, User } from "lucide-react"
+import { BookOpen, Edit, Plus, ExternalLink, MapPin, Calendar, User, Globe, Eye } from "lucide-react"
 import Link from "next/link"
 import React from "react"
 
@@ -42,7 +42,9 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
       const bookDoc = await getDoc(doc(db, "books", unwrappedParams.id))
       if (bookDoc.exists()) {
         const bookData = { id: bookDoc.id, ...bookDoc.data() } as Book
-        if (bookData.userId === user.uid) {
+
+        // Allow viewing if user owns the book OR if book is public
+        if (bookData.userId === user.uid || bookData.isPublic) {
           setBook(bookData)
           setUpdatedProgress({ pagesRead: bookData.pagesRead?.toString() || "" })
         } else {
@@ -183,6 +185,8 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
     )
   }
 
+  const isOwner = book?.userId === user?.uid
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -195,12 +199,15 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
             <p className="text-muted-foreground">by {book.authors.join(", ")}</p>
           </div>
           <div className="flex gap-2">
-            <Link href={`/edit-book/${book.id}`}>
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Book
-              </Button>
-            </Link>
+            {/* Only show edit button if user owns the book */}
+            {isOwner && (
+              <Link href={`/edit-book/${book.id}`}>
+                <Button variant="outline">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Book
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -267,18 +274,21 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
                         style={{ width: `${getProgressPercentage()}%` }}
                       ></div>
                     </div>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Pages read"
-                        value={updatedProgress.pagesRead}
-                        onChange={(e) => setUpdatedProgress({ pagesRead: e.target.value })}
-                        className="w-32"
-                      />
-                      <Button onClick={updateProgress} size="sm">
-                        Update
-                      </Button>
-                    </div>
+                    {/* Progress update - only for owners */}
+                    {isOwner && (
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Pages read"
+                          value={updatedProgress.pagesRead}
+                          onChange={(e) => setUpdatedProgress({ pagesRead: e.target.value })}
+                          className="w-32"
+                        />
+                        <Button onClick={updateProgress} size="sm">
+                          Update
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -350,34 +360,37 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Add Note */}
-                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="col-span-3">
-                      <Textarea
-                        placeholder="Add a note..."
-                        value={newNote.content}
-                        onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pageNumber" className="text-xs">
-                        Page #
-                      </Label>
-                      <Input
-                        id="pageNumber"
-                        type="number"
-                        placeholder="Page"
-                        value={newNote.pageNumber}
-                        onChange={(e) => setNewNote({ ...newNote, pageNumber: e.target.value })}
-                      />
-                      <Button onClick={addNote} size="sm" className="w-full">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
-                      </Button>
+                {/* Add Note - only for owners */}
+                {isOwner && (
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="col-span-3">
+                        <Textarea
+                          placeholder="Add a note..."
+                          value={newNote.content}
+                          onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pageNumber" className="text-xs">
+                          Page #
+                        </Label>
+                        <Input
+                          id="pageNumber"
+                          type="number"
+                          placeholder="Page"
+                          value={newNote.pageNumber}
+                          onChange={(e) => setNewNote({ ...newNote, pageNumber: e.target.value })}
+                        />
+                        <Button onClick={addNote} size="sm" className="w-full">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Notes List */}
                 {book.notes.length === 0 ? (
@@ -414,18 +427,35 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Link href={`/edit-book/${book.id}`}>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Book Details
-                  </Button>
-                </Link>
-                <Link href="/library">
-                  <Button variant="outline" className="w-full justify-start">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Back to Library
-                  </Button>
-                </Link>
+                {isOwner ? (
+                  <>
+                    <Link href={`/edit-book/${book.id}`}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Book Details
+                      </Button>
+                    </Link>
+                    <Link href="/library">
+                      <Button variant="outline" className="w-full justify-start">
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Back to Library
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/discover">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Back to Discover
+                      </Button>
+                    </Link>
+                    <Button variant="outline" className="w-full justify-start" disabled>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Only
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
 

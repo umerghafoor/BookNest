@@ -44,12 +44,21 @@ export default function DiscoverPage() {
       const publicBooksQuery = query(booksRef, where("isPublic", "==", true), orderBy("createdAt", "desc"), limit(500))
       const snapshot = await getDocs(publicBooksQuery)
 
-      const booksData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as PublicBook[]
+      // Get user data for each book
+      const booksWithUserData = await Promise.all(
+        snapshot.docs.map(async (bookDoc) => {
+          const bookData = { id: bookDoc.id, ...bookDoc.data() } as PublicBook
 
-      setBooks(booksData)
+          // Fetch user data from auth users (this would need a users collection in real app)
+          // For now, we'll use the userId to get basic info
+          bookData.userEmail = `user${bookData.userId.slice(-4)}@example.com` // Mock email
+          bookData.userName = `Reader ${bookData.userId.slice(-4)}` // Mock name
+
+          return bookData
+        }),
+      )
+
+      setBooks(booksWithUserData)
     } catch (error) {
       console.error("Error loading public books:", error)
     } finally {
@@ -129,6 +138,11 @@ export default function DiscoverPage() {
 
   const getUserInitials = (email: string) => {
     return email.split("@")[0].slice(0, 2).toUpperCase()
+  }
+
+  const handleBookClick = (book: PublicBook) => {
+    // Navigate to book details page
+    window.open(`/book/${book.id}`, "_blank")
   }
 
   return (
@@ -219,7 +233,7 @@ export default function DiscoverPage() {
         ) : (
           <div className="book-card-grid">
             {filteredBooks.map((book) => (
-              <Card key={book.id} className="book-card group">
+              <Card key={book.id} className="book-card group cursor-pointer" onClick={() => handleBookClick(book)}>
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     {/* Book Cover */}
