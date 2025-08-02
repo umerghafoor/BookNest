@@ -458,7 +458,7 @@ export default function LibraryPage() {
                         {book.title}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                        {book.authors.join(", ")}
+                        {book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
                       </p>
 
                       <div className="flex items-center gap-2 flex-wrap">
@@ -526,7 +526,7 @@ export default function LibraryPage() {
             ))}
           </div>
         ) : (
-          /* Table View */
+          /* Table View - Fixed columns that always show */
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -539,7 +539,7 @@ export default function LibraryPage() {
                           onCheckedChange={toggleSelectAll}
                         />
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[200px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -549,7 +549,7 @@ export default function LibraryPage() {
                           Title {getSortIcon("title")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[150px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -559,7 +559,7 @@ export default function LibraryPage() {
                           Authors {getSortIcon("authors")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[120px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -569,7 +569,7 @@ export default function LibraryPage() {
                           Genre {getSortIcon("genre")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[100px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -579,7 +579,7 @@ export default function LibraryPage() {
                           Status {getSortIcon("status")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[90px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -589,7 +589,7 @@ export default function LibraryPage() {
                           Format {getSortIcon("format")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[80px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -599,8 +599,8 @@ export default function LibraryPage() {
                           Pages {getSortIcon("totalPages")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">Progress</th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[120px]">Progress</th>
+                      <th className="p-3 text-left min-w-[100px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -643,7 +643,7 @@ export default function LibraryPage() {
                             <div className="min-w-0">
                               <Link href={`/book/${book.id}`}>
                                 <p className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate">
-                                  {book.title}
+                                  {book.title || "Untitled"}
                                 </p>
                               </Link>
                               {book.subtitle && (
@@ -654,7 +654,7 @@ export default function LibraryPage() {
                         </td>
                         <td className="p-3">
                           <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
-                            {book.authors.join(", ")}
+                            {book.authors && book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
                           </p>
                         </td>
                         <td className="p-3">
@@ -686,19 +686,19 @@ export default function LibraryPage() {
                                 setQuickEditValue(book.genre || "")
                               }}
                             >
-                              {book.genre || "—"}
+                              {book.genre || "Unknown"}
                             </p>
                           )}
                         </td>
                         <td className="p-3">
                           <Badge className={`text-xs ${getStatusBadgeClass(book.status)}`}>
                             {getStatusIcon(book.status)}
-                            <span className="ml-1">{book.status.replace("-", " ")}</span>
+                            <span className="ml-1">{book.status ? book.status.replace("-", " ") : "Unknown"}</span>
                           </Badge>
                         </td>
                         <td className="p-3">
                           <Badge variant="outline" className="text-xs">
-                            {book.format}
+                            {book.format || "Unknown"}
                           </Badge>
                         </td>
                         <td className="p-3">
@@ -708,7 +708,7 @@ export default function LibraryPage() {
                                 {book.totalPages.toLocaleString()}
                               </span>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400">Unknown</span>
                             )}
                           </div>
                         </td>
@@ -734,7 +734,7 @@ export default function LibraryPage() {
                         </td>
                         <td className="p-3">
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {new Date(book.updatedAt).toLocaleDateString()}
+                            {book.updatedAt ? new Date(book.updatedAt).toLocaleDateString() : "Unknown"}
                           </p>
                         </td>
                         <td className="p-3">
