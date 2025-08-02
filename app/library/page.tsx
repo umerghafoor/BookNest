@@ -8,6 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   BookOpen,
   Search,
@@ -25,6 +34,8 @@ import {
   Star,
   Clock,
   CheckCircle,
+  Save,
+  X,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -79,8 +90,10 @@ export default function LibraryPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null)
-  const [quickEditBook, setQuickEditBook] = useState<Book | null>(null)
-  const [quickEditValue, setQuickEditValue] = useState("")
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingBook, setEditingBook] = useState<Book | null>(null)
+  const [editFormData, setEditFormData] = useState<Partial<Book>>({})
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -229,20 +242,43 @@ export default function LibraryPage() {
     }
   }
 
-  const handleQuickEdit = async (book: Book, field: keyof Book, value: any) => {
+  const openEditDialog = (book: Book) => {
+    setEditingBook(book)
+    setEditFormData({
+      title: book.title,
+      subtitle: book.subtitle,
+      authors: book.authors,
+      genre: book.genre,
+      status: book.status,
+      format: book.format,
+      totalPages: book.totalPages,
+      pagesRead: book.pagesRead,
+      tags: book.tags,
+      isbn: book.isbn,
+      description: book.description,
+      isPublic: book.isPublic,
+    })
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingBook) return
+
+    setSaving(true)
     try {
-      await updateDoc(doc(db, "books", book.id), {
-        [field]: value,
+      await updateDoc(doc(db, "books", editingBook.id), {
+        ...editFormData,
         updatedAt: new Date(),
       })
 
-      setBooks(books.map((b) => (b.id === book.id ? { ...b, [field]: value, updatedAt: new Date() } : b)))
-      setQuickEditBook(null)
-      setQuickEditValue("")
+      setBooks(books.map((b) => (b.id === editingBook.id ? { ...b, ...editFormData, updatedAt: new Date() } : b)))
+      setEditDialogOpen(false)
+      setEditingBook(null)
+      setEditFormData({})
 
       toast({
         title: "Book updated",
-        description: `"${book.title}" has been updated.`,
+        description: `"${editFormData.title}" has been updated successfully.`,
       })
     } catch (error) {
       console.error("Error updating book:", error)
@@ -251,6 +287,8 @@ export default function LibraryPage() {
         description: "Failed to update book. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -458,7 +496,7 @@ export default function LibraryPage() {
                         {book.title}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                        {book.authors.join(", ")}
+                        {book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
                       </p>
 
                       <div className="flex items-center gap-2 flex-wrap">
@@ -499,10 +537,14 @@ export default function LibraryPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEditDialog(book)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Quick Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/edit-book/${book.id}`}>
                                 <Edit className="h-4 w-4 mr-2" />
-                                Edit
+                                Full Edit
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -526,7 +568,7 @@ export default function LibraryPage() {
             ))}
           </div>
         ) : (
-          /* Table View */
+          /* Table View - Fixed columns that always show */
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -539,7 +581,7 @@ export default function LibraryPage() {
                           onCheckedChange={toggleSelectAll}
                         />
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[200px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -549,7 +591,7 @@ export default function LibraryPage() {
                           Title {getSortIcon("title")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[150px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -559,7 +601,7 @@ export default function LibraryPage() {
                           Authors {getSortIcon("authors")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[120px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -569,7 +611,7 @@ export default function LibraryPage() {
                           Genre {getSortIcon("genre")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[100px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -579,7 +621,7 @@ export default function LibraryPage() {
                           Status {getSortIcon("status")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[90px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -589,7 +631,7 @@ export default function LibraryPage() {
                           Format {getSortIcon("format")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[80px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -599,8 +641,8 @@ export default function LibraryPage() {
                           Pages {getSortIcon("totalPages")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left">Progress</th>
-                      <th className="p-3 text-left">
+                      <th className="p-3 text-left min-w-[120px]">Progress</th>
+                      <th className="p-3 text-left min-w-[100px]">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -643,7 +685,7 @@ export default function LibraryPage() {
                             <div className="min-w-0">
                               <Link href={`/book/${book.id}`}>
                                 <p className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate">
-                                  {book.title}
+                                  {book.title || "Untitled"}
                                 </p>
                               </Link>
                               {book.subtitle && (
@@ -654,51 +696,21 @@ export default function LibraryPage() {
                         </td>
                         <td className="p-3">
                           <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
-                            {book.authors.join(", ")}
+                            {book.authors && book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
                           </p>
                         </td>
                         <td className="p-3">
-                          {quickEditBook?.id === book.id && quickEditBook.genre !== undefined ? (
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                value={quickEditValue}
-                                onChange={(e) => setQuickEditValue(e.target.value)}
-                                className="h-8 text-xs"
-                                onBlur={() => {
-                                  handleQuickEdit(book, "genre", quickEditValue)
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    handleQuickEdit(book, "genre", quickEditValue)
-                                  } else if (e.key === "Escape") {
-                                    setQuickEditBook(null)
-                                    setQuickEditValue("")
-                                  }
-                                }}
-                                autoFocus
-                              />
-                            </div>
-                          ) : (
-                            <p
-                              className="text-sm text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded"
-                              onClick={() => {
-                                setQuickEditBook(book)
-                                setQuickEditValue(book.genre || "")
-                              }}
-                            >
-                              {book.genre || "—"}
-                            </p>
-                          )}
+                          <p className="text-sm text-slate-600 dark:text-slate-300">{book.genre || "Unknown"}</p>
                         </td>
                         <td className="p-3">
                           <Badge className={`text-xs ${getStatusBadgeClass(book.status)}`}>
                             {getStatusIcon(book.status)}
-                            <span className="ml-1">{book.status.replace("-", " ")}</span>
+                            <span className="ml-1">{book.status ? book.status.replace("-", " ") : "Unknown"}</span>
                           </Badge>
                         </td>
                         <td className="p-3">
                           <Badge variant="outline" className="text-xs">
-                            {book.format}
+                            {book.format || "Unknown"}
                           </Badge>
                         </td>
                         <td className="p-3">
@@ -708,7 +720,7 @@ export default function LibraryPage() {
                                 {book.totalPages.toLocaleString()}
                               </span>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400">Unknown</span>
                             )}
                           </div>
                         </td>
@@ -734,7 +746,7 @@ export default function LibraryPage() {
                         </td>
                         <td className="p-3">
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {new Date(book.updatedAt).toLocaleDateString()}
+                            {book.updatedAt ? new Date(book.updatedAt).toLocaleDateString() : "Unknown"}
                           </p>
                         </td>
                         <td className="p-3">
@@ -751,10 +763,14 @@ export default function LibraryPage() {
                                   View
                                 </Link>
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(book)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Quick Edit
+                              </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link href={`/edit-book/${book.id}`}>
                                   <Edit className="h-4 w-4 mr-2" />
-                                  Edit
+                                  Full Edit
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
@@ -779,6 +795,197 @@ export default function LibraryPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Quick Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Quick Edit Book</DialogTitle>
+              <DialogDescription>
+                Make quick changes to "{editingBook?.title}". For advanced editing, use the full edit page.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    value={editFormData.title || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                    placeholder="Book title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Subtitle</label>
+                  <Input
+                    value={editFormData.subtitle || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, subtitle: e.target.value })}
+                    placeholder="Book subtitle"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Authors</label>
+                <Input
+                  value={editFormData.authors?.join(", ") || ""}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      authors: e.target.value
+                        .split(",")
+                        .map((a) => a.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  placeholder="Author names (comma separated)"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Genre</label>
+                  <Input
+                    value={editFormData.genre || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, genre: e.target.value })}
+                    placeholder="Book genre"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">ISBN</label>
+                  <Input
+                    value={editFormData.isbn || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, isbn: e.target.value })}
+                    placeholder="ISBN number"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select
+                    value={editFormData.status || ""}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, status: value as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not-read">Not Read</SelectItem>
+                      <SelectItem value="reading">Reading</SelectItem>
+                      <SelectItem value="read">Read</SelectItem>
+                      <SelectItem value="will-read">Will Read</SelectItem>
+                      <SelectItem value="on-hold">On Hold</SelectItem>
+                      <SelectItem value="abandoned">Abandoned</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Format</label>
+                  <Select
+                    value={editFormData.format || ""}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, format: value as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="physical">Physical</SelectItem>
+                      <SelectItem value="ebook">eBook</SelectItem>
+                      <SelectItem value="audiobook">Audiobook</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Public</label>
+                  <Select
+                    value={editFormData.isPublic ? "true" : "false"}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, isPublic: value === "true" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">Private</SelectItem>
+                      <SelectItem value="true">Public</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Total Pages</label>
+                  <Input
+                    type="number"
+                    value={editFormData.totalPages || ""}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        totalPages: e.target.value ? Number.parseInt(e.target.value) : undefined,
+                      })
+                    }
+                    placeholder="Total pages"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Pages Read</label>
+                  <Input
+                    type="number"
+                    value={editFormData.pagesRead || ""}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        pagesRead: e.target.value ? Number.parseInt(e.target.value) : undefined,
+                      })
+                    }
+                    placeholder="Pages read"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tags</label>
+                <Input
+                  value={editFormData.tags?.join(", ") || ""}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      tags: e.target.value
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  placeholder="Tags (comma separated)"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={editFormData.description || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  placeholder="Book description"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} disabled={saving} className="btn-primary">
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
