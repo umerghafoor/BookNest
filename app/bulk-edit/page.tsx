@@ -8,17 +8,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { collection, query, where, getDocs, writeBatch, doc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Book } from "@/lib/types"
-import { Save, Download, Search, Filter, Eye, EyeOff } from "lucide-react"
+import { Save, Download, Search, Filter, Undo, Redo } from "lucide-react"
 import "@/styles/components.css"
 
 interface EditableBook extends Book {
   isEdited?: boolean
   isSelected?: boolean
 }
+
+interface CellPosition {
+  row: number
+  col: number
+}
+
+interface EditingCell {
+  row: number
+  col: string
+  value: string
+}
+
+const COLUMNS = [
+  { key: "title", label: "Title", width: "200px", editable: true },
+  { key: "authors", label: "Authors", width: "150px", editable: true },
+  { key: "genre", label: "Genre", width: "120px", editable: true },
+  { key: "status", label: "Status", width: "120px", editable: true, type: "select" },
+  { key: "format", label: "Format", width: "100px", editable: true, type: "select" },
+  { key: "totalPages", label: "Total Pages", width: "100px", editable: true, type: "number" },
+  { key: "pagesRead", label: "Pages Read", width: "100px", editable: true, type: "number" },
+  { key: "tags", label: "Tags", width: "150px", editable: true },
+  { key: "isPublic", label: "Public", width: "80px", editable: true, type: "boolean" },
+]
+
+const STATUS_OPTIONS = ["not-read", "reading", "read", "will-read", "on-hold", "abandoned"]
+const FORMAT_OPTIONS = ["physical", "ebook", "audiobook"]
 
 export default function BulkEditPage() {
   const { user } = useAuth()
@@ -31,6 +57,14 @@ export default function BulkEditPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [formatFilter, setFormatFilter] = useState("all")
   const [selectedCount, setSelectedCount] = useState(0)
+  const [editingCell, setEditingCell] = useState<EditingCell | null>(null)
+  const [selectedCell, setSelectedCell] = useState<CellPosition | null>(null)
+  const [clipboard, setClipboard] = useState<string>("")
+  const [undoStack, setUndoStack] = useState<EditableBook[][]>([])
+  const [redoStack, setRedoStack] = useState<EditableBook[][]>([])
+
+  const tableRef = useRef<HTMLTableElement>(null)
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (user) {
@@ -45,6 +79,83 @@ export default function BulkEditPage() {
   useEffect(() => {
     setSelectedCount(filteredBooks.filter((book) => book.isSelected).length)
   }, [filteredBooks])
+
+  // Auto-focus edit input when editing starts
+  useEffect(() => {
+    if (editingCell && editInputRef.current) {
+      editInputRef.current.focus()
+      editInputRef.current.select()
+    }
+  }, [editingCell])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedCell || editingCell) return
+
+      const { row, col } = selectedCell
+      let newRow = row
+      let newCol = col
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault()
+          newRow = Math.max(0, row - 1)
+          break
+        case "ArrowDown":
+          e.preventDefault()
+          newRow = Math.min(filteredBooks.length - 1, row + 1)
+          break
+        case "ArrowLeft":
+          e.preventDefault()
+          newCol = Math.max(0, col - 1)
+          break
+        case "ArrowRight":
+        case "Tab":
+          e.preventDefault()
+          newCol = Math.min(COLUMNS.length - 1, col + 1)
+          break
+        case "Enter":
+          e.preventDefault()
+          startEditing(row, COLUMNS[col].key)
+          break
+        case "Delete":
+        case "Backspace":
+          e.preventDefault()
+          clearCell(row, COLUMNS[col].key)
+          break
+        case "c":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            copyCell(row, COLUMNS[col].key)
+          }
+          break
+        case "v":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            pasteCell(row, COLUMNS[col].key)
+          }
+          break
+        case "z":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            if (e.shiftKey) {
+              redo()
+            } else {
+              undo()
+            }
+          }
+          break
+      }
+
+      if (newRow !== row || newCol !== col) {
+        setSelectedCell({ row: newRow, col: newCol })
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [selectedCell, editingCell, filteredBooks.length, clipboard])
 
   const loadBooks = async () => {
     if (!user) return
@@ -62,6 +173,7 @@ export default function BulkEditPage() {
       })) as EditableBook[]
 
       setBooks(booksData)
+      setUndoStack([booksData])
     } catch (error) {
       console.error("Error loading books:", error)
       toast({
@@ -96,10 +208,189 @@ export default function BulkEditPage() {
     setFilteredBooks(filtered)
   }
 
+  const saveToUndoStack = useCallback(() => {
+    setUndoStack((prev) => [...prev.slice(-19), [...books]])
+    setRedoStack([])
+  }, [books])
+
   const updateBook = (bookId: string, field: keyof Book, value: any) => {
+    saveToUndoStack()
     setBooks((prevBooks) =>
       prevBooks.map((book) => (book.id === bookId ? { ...book, [field]: value, isEdited: true } : book)),
     )
+  }
+
+  const startEditing = (rowIndex: number, field: string) => {
+    const book = filteredBooks[rowIndex]
+    if (!book) return
+
+    let value = ""
+    switch (field) {
+      case "authors":
+        value = book.authors.join(", ")
+        break
+      case "tags":
+        value = book.tags.join(", ")
+        break
+      case "isPublic":
+        value = book.isPublic ? "true" : "false"
+        break
+      default:
+        value = String(book[field as keyof Book] || "")
+    }
+
+    setEditingCell({ row: rowIndex, col: field, value })
+  }
+
+  const finishEditing = (save = true) => {
+    if (!editingCell) return
+
+    if (save) {
+      const book = filteredBooks[editingCell.row]
+      if (book) {
+        let processedValue: any = editingCell.value
+
+        switch (editingCell.col) {
+          case "authors":
+            processedValue = editingCell.value
+              .split(",")
+              .map((a) => a.trim())
+              .filter((a) => a)
+            break
+          case "tags":
+            processedValue = editingCell.value
+              .split(",")
+              .map((t) => t.trim())
+              .filter((t) => t)
+            break
+          case "totalPages":
+          case "pagesRead":
+            processedValue = editingCell.value ? Number.parseInt(editingCell.value) : null
+            break
+          case "isPublic":
+            processedValue = editingCell.value === "true"
+            break
+        }
+
+        updateBook(book.id, editingCell.col as keyof Book, processedValue)
+      }
+    }
+
+    setEditingCell(null)
+  }
+
+  const handleCellClick = (rowIndex: number, colIndex: number, field: string) => {
+    setSelectedCell({ row: rowIndex, col: colIndex })
+
+    // Double click to edit
+    if (selectedCell?.row === rowIndex && selectedCell?.col === colIndex) {
+      startEditing(rowIndex, field)
+    }
+  }
+
+  const handleCellDoubleClick = (rowIndex: number, field: string) => {
+    startEditing(rowIndex, field)
+  }
+
+  const clearCell = (rowIndex: number, field: string) => {
+    const book = filteredBooks[rowIndex]
+    if (!book) return
+
+    let clearValue: any = ""
+    switch (field) {
+      case "authors":
+      case "tags":
+        clearValue = []
+        break
+      case "totalPages":
+      case "pagesRead":
+        clearValue = null
+        break
+      case "isPublic":
+        clearValue = false
+        break
+    }
+
+    updateBook(book.id, field as keyof Book, clearValue)
+  }
+
+  const copyCell = (rowIndex: number, field: string) => {
+    const book = filteredBooks[rowIndex]
+    if (!book) return
+
+    let value = ""
+    switch (field) {
+      case "authors":
+        value = book.authors.join(", ")
+        break
+      case "tags":
+        value = book.tags.join(", ")
+        break
+      case "isPublic":
+        value = book.isPublic ? "true" : "false"
+        break
+      default:
+        value = String(book[field as keyof Book] || "")
+    }
+
+    setClipboard(value)
+    toast({
+      title: "Copied",
+      description: "Cell value copied to clipboard",
+    })
+  }
+
+  const pasteCell = (rowIndex: number, field: string) => {
+    if (!clipboard) return
+
+    const book = filteredBooks[rowIndex]
+    if (!book) return
+
+    let processedValue: any = clipboard
+
+    switch (field) {
+      case "authors":
+        processedValue = clipboard
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a)
+        break
+      case "tags":
+        processedValue = clipboard
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t)
+        break
+      case "totalPages":
+      case "pagesRead":
+        processedValue = clipboard ? Number.parseInt(clipboard) : null
+        break
+      case "isPublic":
+        processedValue = clipboard === "true"
+        break
+    }
+
+    updateBook(book.id, field as keyof Book, processedValue)
+  }
+
+  const undo = () => {
+    if (undoStack.length <= 1) return
+
+    const currentState = undoStack[undoStack.length - 1]
+    const previousState = undoStack[undoStack.length - 2]
+
+    setRedoStack((prev) => [...prev, currentState])
+    setUndoStack((prev) => prev.slice(0, -1))
+    setBooks(previousState)
+  }
+
+  const redo = () => {
+    if (redoStack.length === 0) return
+
+    const nextState = redoStack[redoStack.length - 1]
+    setUndoStack((prev) => [...prev, nextState])
+    setRedoStack((prev) => prev.slice(0, -1))
+    setBooks(nextState)
   }
 
   const toggleBookSelection = (bookId: string) => {
@@ -119,6 +410,7 @@ export default function BulkEditPage() {
   }
 
   const bulkUpdateField = (field: keyof Book, value: any) => {
+    saveToUndoStack()
     setBooks((prevBooks) =>
       prevBooks.map((book) => (book.isSelected ? { ...book, [field]: value, isEdited: true } : book)),
     )
@@ -170,36 +462,28 @@ export default function BulkEditPage() {
   }
 
   const exportToCSV = () => {
-    const headers = [
-      "Title",
-      "Subtitle",
-      "Authors",
-      "Genre",
-      "ISBN",
-      "Format",
-      "Status",
-      "Total Pages",
-      "Pages Read",
-      "Tags",
-      "Public",
-    ]
+    const headers = COLUMNS.map((col) => col.label)
 
     const csvContent = [
       headers.join(","),
       ...filteredBooks.map((book) =>
-        [
-          `"${book.title}"`,
-          `"${book.subtitle || ""}"`,
-          `"${book.authors.join("; ")}"`,
-          `"${book.genre || ""}"`,
-          `"${book.isbn || ""}"`,
-          `"${book.format}"`,
-          `"${book.status}"`,
-          book.totalPages || "",
-          book.pagesRead || "",
-          `"${book.tags.join("; ")}"`,
-          book.isPublic ? "Yes" : "No",
-        ].join(","),
+        COLUMNS.map((col) => {
+          let value = ""
+          switch (col.key) {
+            case "authors":
+              value = book.authors.join("; ")
+              break
+            case "tags":
+              value = book.tags.join("; ")
+              break
+            case "isPublic":
+              value = book.isPublic ? "Yes" : "No"
+              break
+            default:
+              value = String(book[col.key as keyof Book] || "")
+          }
+          return `"${value}"`
+        }).join(","),
       ),
     ].join("\n")
 
@@ -212,6 +496,82 @@ export default function BulkEditPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const getCellValue = (book: EditableBook, field: string) => {
+    switch (field) {
+      case "authors":
+        return book.authors.join(", ")
+      case "tags":
+        return book.tags.join(", ")
+      case "isPublic":
+        return book.isPublic ? "Yes" : "No"
+      default:
+        return String(book[field as keyof Book] || "")
+    }
+  }
+
+  const renderCell = (book: EditableBook, rowIndex: number, colIndex: number, column: any) => {
+    const isEditing = editingCell?.row === rowIndex && editingCell?.col === column.key
+    const isSelected = selectedCell?.row === rowIndex && selectedCell?.col === colIndex
+    const isEdited = book.isEdited
+
+    if (isEditing) {
+      if (column.type === "select") {
+        const options = column.key === "status" ? STATUS_OPTIONS : FORMAT_OPTIONS
+        return (
+          <Select
+            value={editingCell.value}
+            onValueChange={(value) => setEditingCell((prev) => (prev ? { ...prev, value } : null))}
+            onOpenChange={(open) => !open && finishEditing()}
+          >
+            <SelectTrigger className="h-8 border-0 focus:ring-2 focus:ring-blue-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option.charAt(0).toUpperCase() + option.slice(1).replace("-", " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )
+      }
+
+      return (
+        <Input
+          ref={editInputRef}
+          type={column.type === "number" ? "number" : "text"}
+          value={editingCell.value}
+          onChange={(e) => setEditingCell((prev) => (prev ? { ...prev, value: e.target.value } : null))}
+          onBlur={() => finishEditing()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              finishEditing()
+            } else if (e.key === "Escape") {
+              finishEditing(false)
+            }
+          }}
+          className="h-8 border-0 focus:ring-2 focus:ring-blue-500"
+        />
+      )
+    }
+
+    return (
+      <div
+        className={`
+          h-8 px-2 py-1 cursor-cell hover:bg-slate-50 dark:hover:bg-slate-800 
+          ${isSelected ? "bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500" : ""}
+          ${isEdited ? "bg-orange-50 dark:bg-orange-900/20" : ""}
+          transition-colors duration-150
+        `}
+        onClick={() => handleCellClick(rowIndex, colIndex, column.key)}
+        onDoubleClick={() => handleCellDoubleClick(rowIndex, column.key)}
+      >
+        {getCellValue(book, column.key)}
+      </div>
+    )
   }
 
   if (!user) return null
@@ -238,12 +598,21 @@ export default function BulkEditPage() {
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div className="page-header">
-            <h1 className="page-title">Bulk Edit Books</h1>
+            <h1 className="page-title">Excel-Style Bulk Editor</h1>
             <p className="page-description">
-              Edit multiple books at once • {filteredBooks.length} books • {selectedCount} selected
+              Edit books like a spreadsheet • {filteredBooks.length} books • {selectedCount} selected
             </p>
+            <div className="text-xs text-slate-500 mt-1">
+              Use arrow keys to navigate • Enter to edit • Ctrl+C/V to copy/paste • Ctrl+Z/Y to undo/redo
+            </div>
           </div>
           <div className="flex gap-2">
+            <Button onClick={undo} disabled={undoStack.length <= 1} variant="outline" size="sm">
+              <Undo className="h-4 w-4" />
+            </Button>
+            <Button onClick={redo} disabled={redoStack.length === 0} variant="outline" size="sm">
+              <Redo className="h-4 w-4" />
+            </Button>
             <Button onClick={exportToCSV} variant="outline">
               <Download className="h-4 w-4 mr-2" />
               Export CSV
@@ -355,149 +724,54 @@ export default function BulkEditPage() {
           </Card>
         )}
 
-        {/* Books Table */}
+        {/* Excel-Style Table */}
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 dark:bg-slate-800">
+            <div className="overflow-auto max-h-[70vh]">
+              <table ref={tableRef} className="w-full border-collapse">
+                <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10">
                   <tr>
-                    <th className="p-3 text-left">
+                    <th className="p-2 text-left border-r border-slate-200 dark:border-slate-700 w-12">
                       <Checkbox
                         checked={filteredBooks.length > 0 && filteredBooks.every((book) => book.isSelected)}
                         onCheckedChange={selectAllVisible}
                       />
                     </th>
-                    <th className="p-3 text-left font-medium">Title</th>
-                    <th className="p-3 text-left font-medium">Authors</th>
-                    <th className="p-3 text-left font-medium">Genre</th>
-                    <th className="p-3 text-left font-medium">Status</th>
-                    <th className="p-3 text-left font-medium">Format</th>
-                    <th className="p-3 text-left font-medium">Pages</th>
-                    <th className="p-3 text-left font-medium">Progress</th>
-                    <th className="p-3 text-left font-medium">Public</th>
-                    <th className="p-3 text-left font-medium">Tags</th>
+                    {COLUMNS.map((column, index) => (
+                      <th
+                        key={column.key}
+                        className="p-2 text-left font-medium border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                        style={{ width: column.width, minWidth: column.width }}
+                      >
+                        {column.label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBooks.map((book) => (
+                  {filteredBooks.map((book, rowIndex) => (
                     <tr
                       key={book.id}
-                      className={`border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                        book.isEdited ? "bg-blue-50 dark:bg-blue-900/20" : ""
-                      }`}
+                      className={`
+                        border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50
+                        ${book.isEdited ? "bg-orange-50 dark:bg-orange-900/10" : ""}
+                      `}
                     >
-                      <td className="p-3">
+                      <td className="p-2 border-r border-slate-200 dark:border-slate-700">
                         <Checkbox
                           checked={book.isSelected || false}
                           onCheckedChange={() => toggleBookSelection(book.id)}
                         />
                       </td>
-                      <td className="p-3">
-                        <Input
-                          value={book.title}
-                          onChange={(e) => updateBook(book.id, "title", e.target.value)}
-                          className="min-w-[200px]"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          value={book.authors.join(", ")}
-                          onChange={(e) =>
-                            updateBook(
-                              book.id,
-                              "authors",
-                              e.target.value.split(", ").filter((a) => a.trim()),
-                            )
-                          }
-                          className="min-w-[150px]"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          value={book.genre || ""}
-                          onChange={(e) => updateBook(book.id, "genre", e.target.value)}
-                          className="min-w-[120px]"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Select value={book.status} onValueChange={(value) => updateBook(book.id, "status", value)}>
-                          <SelectTrigger className="min-w-[120px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="not-read">Not Read</SelectItem>
-                            <SelectItem value="reading">Reading</SelectItem>
-                            <SelectItem value="read">Read</SelectItem>
-                            <SelectItem value="will-read">Will Read</SelectItem>
-                            <SelectItem value="on-hold">On Hold</SelectItem>
-                            <SelectItem value="abandoned">Abandoned</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-3">
-                        <Select value={book.format} onValueChange={(value) => updateBook(book.id, "format", value)}>
-                          <SelectTrigger className="min-w-[100px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="physical">Physical</SelectItem>
-                            <SelectItem value="ebook">eBook</SelectItem>
-                            <SelectItem value="audiobook">Audiobook</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          type="number"
-                          value={book.totalPages || ""}
-                          onChange={(e) =>
-                            updateBook(
-                              book.id,
-                              "totalPages",
-                              e.target.value ? Number.parseInt(e.target.value) : undefined,
-                            )
-                          }
-                          className="w-20"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          type="number"
-                          value={book.pagesRead || ""}
-                          onChange={(e) =>
-                            updateBook(
-                              book.id,
-                              "pagesRead",
-                              e.target.value ? Number.parseInt(e.target.value) : undefined,
-                            )
-                          }
-                          className="w-20"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateBook(book.id, "isPublic", !book.isPublic)}
-                          className={book.isPublic ? "text-green-600" : "text-slate-400"}
+                      {COLUMNS.map((column, colIndex) => (
+                        <td
+                          key={column.key}
+                          className="border-r border-slate-200 dark:border-slate-700 p-0"
+                          style={{ width: column.width, minWidth: column.width }}
                         >
-                          {book.isPublic ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                        </Button>
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          value={book.tags.join(", ")}
-                          onChange={(e) =>
-                            updateBook(
-                              book.id,
-                              "tags",
-                              e.target.value.split(", ").filter((t) => t.trim()),
-                            )
-                          }
-                          className="min-w-[150px]"
-                        />
-                      </td>
+                          {renderCell(book, rowIndex, colIndex, column)}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -511,6 +785,21 @@ export default function BulkEditPage() {
             <p className="text-slate-500 dark:text-slate-400">No books match your filters.</p>
           </div>
         )}
+
+        {/* Help Text */}
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+          <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Excel-Style Controls:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-800 dark:text-blue-200">
+            <div>• Click to select cell, double-click to edit</div>
+            <div>• Arrow keys to navigate between cells</div>
+            <div>• Enter to start editing, Escape to cancel</div>
+            <div>• Tab to move to next cell</div>
+            <div>• Ctrl+C to copy, Ctrl+V to paste</div>
+            <div>• Ctrl+Z to undo, Ctrl+Y to redo</div>
+            <div>• Delete/Backspace to clear cell</div>
+            <div>• Changes auto-save when you move to another cell</div>
+          </div>
+        </div>
       </div>
     </div>
   )
