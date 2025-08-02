@@ -4,26 +4,83 @@ import { useAuth } from "@/components/auth-provider"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Search, Plus, Grid3X3, List, Filter } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  BookOpen,
+  Search,
+  Plus,
+  Grid3X3,
+  Table,
+  Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Edit,
+  Eye,
+  Trash2,
+  MoreHorizontal,
+  Star,
+  Clock,
+  CheckCircle,
+} from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
+import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { useToast } from "@/hooks/use-toast"
 import type { Book } from "@/lib/types"
 import "@/styles/components.css"
 
+type SortField =
+  | "title"
+  | "authors"
+  | "genre"
+  | "status"
+  | "format"
+  | "totalPages"
+  | "pagesRead"
+  | "createdAt"
+  | "updatedAt"
+type SortDirection = "asc" | "desc"
+
 export default function LibraryPage() {
   const { user } = useAuth()
+  const { toast } = useToast()
   const [books, setBooks] = useState<Book[]>([])
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [formatFilter, setFormatFilter] = useState("all")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [genreFilter, setGenreFilter] = useState("all")
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table")
+  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set())
+  const [sortField, setSortField] = useState<SortField>("updatedAt")
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [bookToDelete, setBookToDelete] = useState<Book | null>(null)
+  const [quickEditBook, setQuickEditBook] = useState<Book | null>(null)
+  const [quickEditValue, setQuickEditValue] = useState("")
 
   useEffect(() => {
     if (user) {
@@ -32,15 +89,15 @@ export default function LibraryPage() {
   }, [user])
 
   useEffect(() => {
-    filterBooks()
-  }, [books, searchTerm, statusFilter, formatFilter])
+    filterAndSortBooks()
+  }, [books, searchTerm, statusFilter, formatFilter, genreFilter, sortField, sortDirection])
 
   const loadBooks = async () => {
     if (!user) return
 
     try {
       const booksRef = collection(db, "books")
-      const userBooksQuery = query(booksRef, where("userId", "==", user.uid), orderBy("title"))
+      const userBooksQuery = query(booksRef, where("userId", "==", user.uid))
       const snapshot = await getDocs(userBooksQuery)
 
       const booksData = snapshot.docs.map((doc) => ({
@@ -51,20 +108,29 @@ export default function LibraryPage() {
       setBooks(booksData)
     } catch (error) {
       console.error("Error loading books:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load books. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const filterBooks = () => {
+  const filterAndSortBooks = () => {
     let filtered = books
 
+    // Apply filters
     if (searchTerm) {
+      const term = searchTerm.toLowerCase()
       filtered = filtered.filter(
         (book) =>
-          book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          book.authors.some((author) => author.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          book.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase())),
+          book.title.toLowerCase().includes(term) ||
+          book.authors.some((author) => author.toLowerCase().includes(term)) ||
+          book.genre?.toLowerCase().includes(term) ||
+          book.tags.some((tag) => tag.toLowerCase().includes(term)) ||
+          book.isbn?.toLowerCase().includes(term),
       )
     }
 
@@ -76,7 +142,116 @@ export default function LibraryPage() {
       filtered = filtered.filter((book) => book.format === formatFilter)
     }
 
+    if (genreFilter !== "all") {
+      filtered = filtered.filter((book) => book.genre === genreFilter)
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField]
+      let bValue: any = b[sortField]
+
+      // Handle special cases
+      if (sortField === "authors") {
+        aValue = a.authors.join(", ")
+        bValue = b.authors.join(", ")
+      } else if (sortField === "createdAt" || sortField === "updatedAt") {
+        aValue = new Date(aValue).getTime()
+        bValue = new Date(bValue).getTime()
+      }
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0
+      if (aValue == null) return sortDirection === "asc" ? -1 : 1
+      if (bValue == null) return sortDirection === "asc" ? 1 : -1
+
+      // Compare values
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        const comparison = aValue.localeCompare(bValue)
+        return sortDirection === "asc" ? comparison : -comparison
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
+      return 0
+    })
+
     setFilteredBooks(filtered)
+  }
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />
+    return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+  }
+
+  const toggleBookSelection = (bookId: string) => {
+    const newSelected = new Set(selectedBooks)
+    if (newSelected.has(bookId)) {
+      newSelected.delete(bookId)
+    } else {
+      newSelected.add(bookId)
+    }
+    setSelectedBooks(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedBooks.size === filteredBooks.length) {
+      setSelectedBooks(new Set())
+    } else {
+      setSelectedBooks(new Set(filteredBooks.map((book) => book.id)))
+    }
+  }
+
+  const handleDeleteBook = async (book: Book) => {
+    try {
+      await deleteDoc(doc(db, "books", book.id))
+      setBooks(books.filter((b) => b.id !== book.id))
+      toast({
+        title: "Book deleted",
+        description: `"${book.title}" has been removed from your library.`,
+      })
+    } catch (error) {
+      console.error("Error deleting book:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete book. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleQuickEdit = async (book: Book, field: keyof Book, value: any) => {
+    try {
+      await updateDoc(doc(db, "books", book.id), {
+        [field]: value,
+        updatedAt: new Date(),
+      })
+
+      setBooks(books.map((b) => (b.id === book.id ? { ...b, [field]: value, updatedAt: new Date() } : b)))
+      setQuickEditBook(null)
+      setQuickEditValue("")
+
+      toast({
+        title: "Book updated",
+        description: `"${book.title}" has been updated.`,
+      })
+    } catch (error) {
+      console.error("Error updating book:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update book. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const getStatusBadgeClass = (status: string) => {
@@ -101,6 +276,24 @@ export default function LibraryPage() {
     return Math.round((book.pagesRead / book.totalPages) * 100)
   }
 
+  const getUniqueGenres = () => {
+    const genres = books.map((book) => book.genre).filter((genre): genre is string => Boolean(genre))
+    return [...new Set(genres)].sort()
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "reading":
+        return <Clock className="h-3 w-3" />
+      case "read":
+        return <CheckCircle className="h-3 w-3" />
+      case "will-read":
+        return <Star className="h-3 w-3" />
+      default:
+        return null
+    }
+  }
+
   if (!user) return null
 
   return (
@@ -109,188 +302,510 @@ export default function LibraryPage() {
 
       <div className="content-container">
         {/* Header */}
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-start mb-6">
           <div className="page-header">
             <h1 className="page-title">My Library</h1>
             <p className="page-description">
               {filteredBooks.length} of {books.length} books
+              {selectedBooks.size > 0 && ` • ${selectedBooks.size} selected`}
             </p>
           </div>
-          <Link href="/add-book">
-            <Button className="btn-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Book
-            </Button>
-          </Link>
-        </div>
-
-        {/* Filters and View Toggle */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search books, authors, or tags..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Filters */}
           <div className="flex gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="not-read">Not Read</SelectItem>
-                <SelectItem value="reading">Reading</SelectItem>
-                <SelectItem value="read">Read</SelectItem>
-                <SelectItem value="will-read">Will Read</SelectItem>
-                <SelectItem value="on-hold">On Hold</SelectItem>
-                <SelectItem value="abandoned">Abandoned</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Formats</SelectItem>
-                <SelectItem value="physical">Physical</SelectItem>
-                <SelectItem value="ebook">eBook</SelectItem>
-                <SelectItem value="audiobook">Audiobook</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* View Toggle */}
-            <div className="view-toggle">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`view-toggle-btn ${viewMode === "grid" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`view-toggle-btn ${viewMode === "list" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
+            <Link href="/bulk-edit">
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Bulk Edit
+              </Button>
+            </Link>
+            <Link href="/add-book">
+              <Button className="btn-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Book
+              </Button>
+            </Link>
           </div>
         </div>
+
+        {/* Advanced Search and Filters */}
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Search & Filter</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search by title, author, genre, tags, or ISBN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filters Row */}
+            <div className="flex flex-wrap gap-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="not-read">Not Read</SelectItem>
+                  <SelectItem value="reading">Reading</SelectItem>
+                  <SelectItem value="read">Read</SelectItem>
+                  <SelectItem value="will-read">Will Read</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="abandoned">Abandoned</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={formatFilter} onValueChange={setFormatFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Formats</SelectItem>
+                  <SelectItem value="physical">Physical</SelectItem>
+                  <SelectItem value="ebook">eBook</SelectItem>
+                  <SelectItem value="audiobook">Audiobook</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={genreFilter} onValueChange={setGenreFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Genres</SelectItem>
+                  {getUniqueGenres().map((genre) => (
+                    <SelectItem key={genre} value={genre}>
+                      {genre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* View Toggle */}
+              <div className="view-toggle ml-auto">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`view-toggle-btn ${viewMode === "grid" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`view-toggle-btn ${viewMode === "table" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
+                >
+                  <Table className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Books Display */}
         {loading ? (
-          <div className={viewMode === "grid" ? "book-card-grid" : "book-card-list"}>
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="card-clean animate-pulse">
-                <CardContent className="p-6">
-                  <div className="flex space-x-4">
-                    <div className="w-16 h-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
-                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            ))}
+          </div>
+        ) : filteredBooks.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">
+                {books.length === 0 ? "No books yet" : "No books match your filters"}
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
+                {books.length === 0
+                  ? "Start building your library by adding your first book"
+                  : "Try adjusting your search or filter criteria"}
+              </p>
+              {books.length === 0 && (
+                <Link href="/add-book">
+                  <Button className="btn-primary">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Book
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        ) : viewMode === "grid" ? (
+          <div className="book-card-grid">
+            {filteredBooks.map((book) => (
+              <Card key={book.id} className="book-card group">
+                <CardContent className="p-4">
+                  <div className="flex flex-col space-y-3">
+                    <div className="w-full h-32 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center">
+                      {book.coverImage ? (
+                        <img
+                          src={book.coverImage || "/placeholder.svg"}
+                          alt={book.title}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm line-clamp-2 text-slate-900 dark:text-white">
+                        {book.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                        {book.authors.join(", ")}
+                      </p>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`text-xs ${getStatusBadgeClass(book.status)}`}>
+                          {getStatusIcon(book.status)}
+                          <span className="ml-1">{book.status.replace("-", " ")}</span>
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {book.format}
+                        </Badge>
+                      </div>
+
+                      {book.status === "reading" && book.totalPages && book.pagesRead && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {book.pagesRead} / {book.totalPages} pages
+                            </span>
+                            <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
+                          </div>
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${getProgressPercentage(book)}%` }}></div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center pt-2">
+                        <Link href={`/book/${book.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/edit-book/${book.id}`}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setBookToDelete(book)
+                                setDeleteDialogOpen(true)
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        ) : filteredBooks.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">
-              {books.length === 0 ? "No books yet" : "No books match your filters"}
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-4">
-              {books.length === 0
-                ? "Start building your library by adding your first book"
-                : "Try adjusting your search or filter criteria"}
-            </p>
-            {books.length === 0 && (
-              <Link href="/add-book">
-                <Button className="btn-primary">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Book
-                </Button>
-              </Link>
-            )}
-          </div>
         ) : (
-          <div className={viewMode === "grid" ? "book-card-grid" : "book-card-list"}>
-            {filteredBooks.map((book) => (
-              <Link key={book.id} href={`/book/${book.id}`}>
-                <Card className="book-card">
-                  <CardContent className={viewMode === "grid" ? "p-4" : "p-4"}>
-                    <div className={`flex ${viewMode === "grid" ? "flex-col" : "flex-row"} space-x-4`}>
-                      <div
-                        className={`${viewMode === "grid" ? "w-full h-32 mb-4" : "w-16 h-20"} bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0`}
+          /* Table View */
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 dark:bg-slate-800 border-b">
+                    <tr>
+                      <th className="p-3 text-left w-12">
+                        <Checkbox
+                          checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("title")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Title {getSortIcon("title")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("authors")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Authors {getSortIcon("authors")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("genre")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Genre {getSortIcon("genre")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("status")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Status {getSortIcon("status")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("format")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Format {getSortIcon("format")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("totalPages")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Pages {getSortIcon("totalPages")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left">Progress</th>
+                      <th className="p-3 text-left">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort("updatedAt")}
+                          className="font-medium hover:bg-transparent"
+                        >
+                          Updated {getSortIcon("updatedAt")}
+                        </Button>
+                      </th>
+                      <th className="p-3 text-left w-20">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBooks.map((book) => (
+                      <tr
+                        key={book.id}
+                        className={`border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                          selectedBooks.has(book.id) ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                        }`}
                       >
-                        <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm mb-1 truncate text-slate-900 dark:text-white">
-                          {book.title}
-                        </h3>
-                        {book.subtitle && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 truncate">{book.subtitle}</p>
-                        )}
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 truncate">
-                          {book.authors.join(", ")}
-                        </p>
-
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <td className="p-3">
+                          <Checkbox
+                            checked={selectedBooks.has(book.id)}
+                            onCheckedChange={() => toggleBookSelection(book.id)}
+                          />
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-10 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0">
+                              {book.coverImage ? (
+                                <img
+                                  src={book.coverImage || "/placeholder.svg"}
+                                  alt={book.title}
+                                  className="w-full h-full object-cover rounded"
+                                />
+                              ) : (
+                                <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <Link href={`/book/${book.id}`}>
+                                <p className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate">
+                                  {book.title}
+                                </p>
+                              </Link>
+                              {book.subtitle && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{book.subtitle}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                            {book.authors.join(", ")}
+                          </p>
+                        </td>
+                        <td className="p-3">
+                          {quickEditBook?.id === book.id && quickEditBook.genre !== undefined ? (
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                value={quickEditValue}
+                                onChange={(e) => setQuickEditValue(e.target.value)}
+                                className="h-8 text-xs"
+                                onBlur={() => {
+                                  handleQuickEdit(book, "genre", quickEditValue)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    handleQuickEdit(book, "genre", quickEditValue)
+                                  } else if (e.key === "Escape") {
+                                    setQuickEditBook(null)
+                                    setQuickEditValue("")
+                                  }
+                                }}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <p
+                              className="text-sm text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded"
+                              onClick={() => {
+                                setQuickEditBook(book)
+                                setQuickEditValue(book.genre || "")
+                              }}
+                            >
+                              {book.genre || "—"}
+                            </p>
+                          )}
+                        </td>
+                        <td className="p-3">
                           <Badge className={`text-xs ${getStatusBadgeClass(book.status)}`}>
-                            {book.status.replace("-", " ")}
+                            {getStatusIcon(book.status)}
+                            <span className="ml-1">{book.status.replace("-", " ")}</span>
                           </Badge>
+                        </td>
+                        <td className="p-3">
                           <Badge variant="outline" className="text-xs">
                             {book.format}
                           </Badge>
-                        </div>
-
-                        {book.status === "reading" && book.totalPages && book.pagesRead && (
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                              <span className="text-slate-500 dark:text-slate-400">
-                                {book.pagesRead} / {book.totalPages} pages
+                        </td>
+                        <td className="p-3">
+                          <div className="text-sm">
+                            {book.totalPages ? (
+                              <span className="text-slate-600 dark:text-slate-300">
+                                {book.totalPages.toLocaleString()}
                               </span>
-                              <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
-                            </div>
-                            <div className="progress-bar">
-                              <div className="progress-fill" style={{ width: `${getProgressPercentage(book)}%` }}></div>
-                            </div>
-                          </div>
-                        )}
-
-                        {book.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {book.tags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                            {book.tags.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{book.tags.length - 2}
-                              </Badge>
+                            ) : (
+                              <span className="text-slate-400">—</span>
                             )}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                        </td>
+                        <td className="p-3">
+                          {book.status === "reading" && book.totalPages && book.pagesRead ? (
+                            <div className="space-y-1 min-w-24">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-500 dark:text-slate-400">
+                                  {book.pagesRead} / {book.totalPages}
+                                </span>
+                                <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
+                              </div>
+                              <div className="progress-bar">
+                                <div
+                                  className="progress-fill"
+                                  style={{ width: `${getProgressPercentage(book)}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {new Date(book.updatedAt).toLocaleDateString()}
+                          </p>
+                        </td>
+                        <td className="p-3">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/book/${book.id}`}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/edit-book/${book.id}`}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setBookToDelete(book)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Book</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{bookToDelete?.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (bookToDelete) {
+                    handleDeleteBook(bookToDelete)
+                    setDeleteDialogOpen(false)
+                    setBookToDelete(null)
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )
