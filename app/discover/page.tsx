@@ -5,12 +5,23 @@ import { Navigation } from "@/components/navigation"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BookOpen, Search, Filter, User, Eye } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { BookOpen, Search, Filter, User, Eye, MessageCircle, Send, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useState } from "react"
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore"
+import { collection, query, where, getDocs, orderBy, limit, addDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { useToast } from "@/hooks/use-toast"
 import type { Book } from "@/lib/types"
 import "@/styles/components.css"
 
@@ -20,15 +31,36 @@ interface PublicBook extends Book {
   userPhotoURL?: string
 }
 
+interface BorrowRequest {
+  id?: string
+  bookId: string
+  borrowerUserId: string
+  borrowerName: string
+  borrowerEmail: string
+  ownerUserId: string
+  message: string
+  status: "pending" | "approved" | "rejected"
+  createdAt: Date
+}
+
+const ITEMS_PER_PAGE = 12
+
 export default function DiscoverPage() {
   const { user } = useAuth()
+  const { toast } = useToast()
   const [books, setBooks] = useState<PublicBook[]>([])
   const [filteredBooks, setFilteredBooks] = useState<PublicBook[]>([])
+  const [paginatedBooks, setPaginatedBooks] = useState<PublicBook[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [genreFilter, setGenreFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortBy, setSortBy] = useState("recent")
+  const [borrowDialogOpen, setBorrowDialogOpen] = useState(false)
+  const [selectedBook, setSelectedBook] = useState<PublicBook | null>(null)
+  const [borrowMessage, setBorrowMessage] = useState("")
+  const [sending, setSending] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     loadPublicBooks()
@@ -37,6 +69,10 @@ export default function DiscoverPage() {
   useEffect(() => {
     filterAndSortBooks()
   }, [books, searchTerm, genreFilter, statusFilter, sortBy])
+
+  useEffect(() => {
+    paginateBooks()
+  }, [filteredBooks, currentPage])
 
   const loadPublicBooks = async () => {
     try {
@@ -107,7 +143,16 @@ export default function DiscoverPage() {
     }
 
     setFilteredBooks(filtered)
+    setCurrentPage(1) // Reset to first page when filtering
   }
+
+  const paginateBooks = () => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    setPaginatedBooks(filteredBooks.slice(startIndex, endIndex))
+  }
+
+  const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE)
 
   const getUniqueGenres = () => {
     const genres = books.map((book) => book.genre).filter((genre): genre is string => Boolean(genre))
@@ -131,11 +176,6 @@ export default function DiscoverPage() {
     }
   }
 
-  const getProgressPercentage = (book: Book) => {
-    if (!book.totalPages || !book.pagesRead) return 0
-    return Math.round((book.pagesRead / book.totalPages) * 100)
-  }
-
   const getUserInitials = (email: string) => {
     return email.split("@")[0].slice(0, 2).toUpperCase()
   }
@@ -143,6 +183,50 @@ export default function DiscoverPage() {
   const handleBookClick = (book: PublicBook) => {
     // Navigate to book details page
     window.open(`/book/${book.id}`, "_blank")
+  }
+
+  const openBorrowDialog = (book: PublicBook) => {
+    setSelectedBook(book)
+    setBorrowMessage("")
+    setBorrowDialogOpen(true)
+  }
+
+  const sendBorrowRequest = async () => {
+    if (!selectedBook || !user || !borrowMessage.trim()) return
+
+    setSending(true)
+    try {
+      const borrowRequest: BorrowRequest = {
+        bookId: selectedBook.id,
+        borrowerUserId: user.uid,
+        borrowerName: user.displayName || user.email || "Anonymous",
+        borrowerEmail: user.email || "",
+        ownerUserId: selectedBook.userId,
+        message: borrowMessage.trim(),
+        status: "pending",
+        createdAt: new Date(),
+      }
+
+      await addDoc(collection(db, "borrowRequests"), borrowRequest)
+
+      toast({
+        title: "Borrow request sent",
+        description: `Your request to borrow "${selectedBook.title}" has been sent to the owner.`,
+      })
+
+      setBorrowDialogOpen(false)
+      setSelectedBook(null)
+      setBorrowMessage("")
+    } catch (error) {
+      console.error("Error sending borrow request:", error)
+      toast({
+        title: "Error",
+        description: "Failed to send borrow request. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -154,7 +238,8 @@ export default function DiscoverPage() {
         <div className="page-header mb-8">
           <h1 className="page-title">Discover Books</h1>
           <p className="page-description">
-            Explore books shared by the BookNest community • {filteredBooks.length} books
+            Explore books shared by the BookNest community • {filteredBooks.length} books • Page {currentPage} of{" "}
+            {totalPages || 1}
           </p>
         </div>
 
@@ -232,7 +317,7 @@ export default function DiscoverPage() {
           </div>
         ) : (
           <div className="book-card-grid">
-            {filteredBooks.map((book) => (
+            {paginatedBooks.map((book) => (
               <Card key={book.id} className="book-card group cursor-pointer" onClick={() => handleBookClick(book)}>
                 <CardContent className="p-4">
                   <div className="space-y-3">
@@ -268,22 +353,12 @@ export default function DiscoverPage() {
                         <Badge variant="outline" className="text-xs">
                           {book.format}
                         </Badge>
+                        {book.allowBorrow && (
+                          <Badge variant="secondary" className="text-xs">
+                            Borrowable
+                          </Badge>
+                        )}
                       </div>
-
-                      {/* Progress for reading books */}
-                      {book.status === "reading" && book.totalPages && book.pagesRead && (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-500 dark:text-slate-400">
-                              {book.pagesRead} / {book.totalPages} pages
-                            </span>
-                            <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
-                          </div>
-                          <div className="progress-bar">
-                            <div className="progress-fill" style={{ width: `${getProgressPercentage(book)}%` }}></div>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Tags */}
                       {book.tags.length > 0 && (
@@ -301,20 +376,38 @@ export default function DiscoverPage() {
                         </div>
                       )}
 
-                      {/* User Info */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={book.userPhotoURL || "/placeholder.svg"} />
-                          <AvatarFallback className="text-xs">
-                            {book.userEmail ? getUserInitials(book.userEmail) : <User className="h-3 w-3" />}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {book.userName || book.userEmail?.split("@")[0] || "Anonymous"}
-                        </span>
-                        <div className="flex items-center gap-1 ml-auto">
-                          <Eye className="h-3 w-3 text-slate-400" />
-                          <span className="text-xs text-slate-400">Public</span>
+                      {/* User Info and Actions */}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={book.userPhotoURL || "/placeholder.svg"} />
+                            <AvatarFallback className="text-xs">
+                              {book.userEmail ? getUserInitials(book.userEmail) : <User className="h-3 w-3" />}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {book.userName || book.userEmail?.split("@")[0] || "Anonymous"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {book.allowBorrow && user && book.userId !== user.uid && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openBorrowDialog(book)
+                              }}
+                              className="h-6 px-2 text-xs"
+                            >
+                              <MessageCircle className="h-3 w-3 mr-1" />
+                              Borrow
+                            </Button>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-3 w-3 text-slate-400" />
+                            <span className="text-xs text-slate-400">Public</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -324,6 +417,103 @@ export default function DiscoverPage() {
             ))}
           </div>
         )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Borrow Request Dialog */}
+        <Dialog open={borrowDialogOpen} onOpenChange={setBorrowDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Request to Borrow</DialogTitle>
+              <DialogDescription>
+                Send a message to the owner of "{selectedBook?.title}" to request borrowing this book.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your message to the owner:</label>
+                <Textarea
+                  value={borrowMessage}
+                  onChange={(e) => setBorrowMessage(e.target.value)}
+                  placeholder="Hi! I'd love to borrow your book. When would be a good time to pick it up?"
+                  rows={4}
+                />
+              </div>
+              <div className="text-xs text-slate-500">
+                The owner will receive your contact information along with this message.
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBorrowDialogOpen(false)} disabled={sending}>
+                Cancel
+              </Button>
+              <Button onClick={sendBorrowRequest} disabled={!borrowMessage.trim() || sending} className="btn-primary">
+                <Send className="h-4 w-4 mr-2" />
+                {sending ? "Sending..." : "Send Request"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

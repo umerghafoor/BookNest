@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BookOpen, Save, Undo2, Redo2, ArrowLeft, Search, Filter } from "lucide-react"
+import { BookOpen, Save, Undo2, Redo2, ArrowLeft, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { useEffect, useState, useRef, useCallback } from "react"
@@ -27,25 +27,28 @@ interface EditHistory {
 }
 
 const COLUMNS = [
-  { key: "title", label: "Title", type: "text", width: "250px" },
-  { key: "authors", label: "Authors", type: "array", width: "200px" },
-  { key: "genre", label: "Genre", type: "text", width: "150px" },
-  { key: "status", label: "Status", type: "select", width: "140px" },
-  { key: "format", label: "Format", type: "select", width: "120px" },
-  { key: "totalPages", label: "Pages", type: "number", width: "100px" },
-  { key: "pagesRead", label: "Read", type: "number", width: "100px" },
-  { key: "tags", label: "Tags", type: "array", width: "200px" },
-  { key: "isbn", label: "ISBN", type: "text", width: "150px" },
+  { key: "title", label: "Title", type: "text", width: "20%" },
+  { key: "authors", label: "Authors", type: "array", width: "15%" },
+  { key: "genre", label: "Genre", type: "text", width: "12%" },
+  { key: "status", label: "Status", type: "select", width: "10%" },
+  { key: "format", label: "Format", type: "select", width: "8%" },
+  { key: "totalPages", label: "Pages", type: "number", width: "8%" },
+  { key: "pagesRead", label: "Read", type: "number", width: "8%" },
+  { key: "isPublic", label: "Public", type: "boolean", width: "7%" },
+  { key: "allowBorrow", label: "Borrowable", type: "boolean", width: "7%" },
+  { key: "tags", label: "Tags", type: "array", width: "15%" },
 ]
 
 const STATUS_OPTIONS = ["not-read", "reading", "read", "will-read", "on-hold", "abandoned"]
 const FORMAT_OPTIONS = ["physical", "ebook", "audiobook"]
+const ITEMS_PER_PAGE = 20
 
 export default function BulkEditPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [books, setBooks] = useState<Book[]>([])
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
+  const [paginatedBooks, setPaginatedBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedCell, setSelectedCell] = useState<CellPosition | null>(null)
@@ -58,6 +61,7 @@ export default function BulkEditPage() {
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [copiedValue, setCopiedValue] = useState<string>("")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const tableRef = useRef<HTMLTableElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
@@ -72,6 +76,10 @@ export default function BulkEditPage() {
   useEffect(() => {
     filterBooks()
   }, [books, searchTerm, statusFilter])
+
+  useEffect(() => {
+    paginateBooks()
+  }, [filteredBooks, currentPage])
 
   // Focus and position cursor properly when editing starts
   useEffect(() => {
@@ -92,7 +100,7 @@ export default function BulkEditPage() {
 
       // Navigation shortcuts
       if (selectedCell) {
-        const currentRowIndex = filteredBooks.findIndex((book) => book.id === selectedCell.row.toString())
+        const currentRowIndex = paginatedBooks.findIndex((book) => book.id === selectedCell.row.toString())
         const currentColIndex = COLUMNS.findIndex((col) => col.key === selectedCell.col)
 
         switch (e.key) {
@@ -100,16 +108,16 @@ export default function BulkEditPage() {
             e.preventDefault()
             if (currentRowIndex > 0) {
               setSelectedCell({
-                row: Number.parseInt(filteredBooks[currentRowIndex - 1].id),
+                row: Number.parseInt(paginatedBooks[currentRowIndex - 1].id),
                 col: selectedCell.col,
               })
             }
             break
           case "ArrowDown":
             e.preventDefault()
-            if (currentRowIndex < filteredBooks.length - 1) {
+            if (currentRowIndex < paginatedBooks.length - 1) {
               setSelectedCell({
-                row: Number.parseInt(filteredBooks[currentRowIndex + 1].id),
+                row: Number.parseInt(paginatedBooks[currentRowIndex + 1].id),
                 col: selectedCell.col,
               })
             }
@@ -178,7 +186,7 @@ export default function BulkEditPage() {
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [selectedCell, editingCell, filteredBooks, copiedValue])
+  }, [selectedCell, editingCell, paginatedBooks, copiedValue])
 
   const loadBooks = async () => {
     if (!user) return
@@ -225,7 +233,16 @@ export default function BulkEditPage() {
     }
 
     setFilteredBooks(filtered)
+    setCurrentPage(1) // Reset to first page when filtering
   }
+
+  const paginateBooks = () => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    setPaginatedBooks(filteredBooks.slice(startIndex, endIndex))
+  }
+
+  const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE)
 
   const addToHistory = (newBooks: Book[]) => {
     const newHistory = history.slice(0, historyIndex + 1)
@@ -275,6 +292,11 @@ export default function BulkEditPage() {
             processedValue = value === "" ? undefined : Number.parseInt(value) || 0
           }
 
+          // Process boolean fields
+          if (field === "isPublic" || field === "allowBorrow") {
+            processedValue = value === "true" || value === true
+          }
+
           return {
             ...book,
             [field]: processedValue,
@@ -293,7 +315,7 @@ export default function BulkEditPage() {
   const startEditing = () => {
     if (!selectedCell) return
 
-    const book = filteredBooks.find((b) => b.id === selectedCell.row.toString())
+    const book = paginatedBooks.find((b) => b.id === selectedCell.row.toString())
     if (!book) return
 
     const column = COLUMNS.find((col) => col.key === selectedCell.col)
@@ -303,6 +325,8 @@ export default function BulkEditPage() {
 
     if (column.type === "array" && Array.isArray(currentValue)) {
       currentValue = currentValue.join(", ")
+    } else if (column.type === "boolean") {
+      currentValue = currentValue ? "true" : "false"
     }
 
     setEditValue(String(currentValue || ""))
@@ -312,7 +336,7 @@ export default function BulkEditPage() {
   const finishEditing = () => {
     if (!editingCell) return
 
-    const book = filteredBooks.find((b) => b.id === editingCell.row.toString())
+    const book = paginatedBooks.find((b) => b.id === editingCell.row.toString())
     if (!book) return
 
     updateBookField(book.id, editingCell.col, editValue)
@@ -328,7 +352,7 @@ export default function BulkEditPage() {
   const copyCell = () => {
     if (!selectedCell) return
 
-    const book = filteredBooks.find((b) => b.id === selectedCell.row.toString())
+    const book = paginatedBooks.find((b) => b.id === selectedCell.row.toString())
     if (!book) return
 
     const value = book[selectedCell.col as keyof Book]
@@ -346,7 +370,7 @@ export default function BulkEditPage() {
   const pasteCell = () => {
     if (!selectedCell || !copiedValue) return
 
-    const book = filteredBooks.find((b) => b.id === selectedCell.row.toString())
+    const book = paginatedBooks.find((b) => b.id === selectedCell.row.toString())
     if (!book) return
 
     updateBookField(book.id, selectedCell.col, copiedValue)
@@ -360,10 +384,15 @@ export default function BulkEditPage() {
   const clearCell = () => {
     if (!selectedCell) return
 
-    const book = filteredBooks.find((b) => b.id === selectedCell.row.toString())
+    const book = paginatedBooks.find((b) => b.id === selectedCell.row.toString())
     if (!book) return
 
-    updateBookField(book.id, selectedCell.col, "")
+    const column = COLUMNS.find((col) => col.key === selectedCell.col)
+    if (column?.type === "boolean") {
+      updateBookField(book.id, selectedCell.col, false)
+    } else {
+      updateBookField(book.id, selectedCell.col, "")
+    }
   }
 
   const saveChanges = async () => {
@@ -411,10 +440,10 @@ export default function BulkEditPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedBooks.size === filteredBooks.length) {
+    if (selectedBooks.size === paginatedBooks.length) {
       setSelectedBooks(new Set())
     } else {
-      setSelectedBooks(new Set(filteredBooks.map((book) => book.id)))
+      setSelectedBooks(new Set(paginatedBooks.map((book) => book.id)))
     }
   }
 
@@ -422,6 +451,9 @@ export default function BulkEditPage() {
     const value = book[columnKey as keyof Book]
     if (Array.isArray(value)) {
       return value.join(", ")
+    }
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No"
     }
     return String(value || "")
   }
@@ -458,7 +490,7 @@ export default function BulkEditPage() {
               <div>
                 <h1 className="page-title">Excel-Style Bulk Editor</h1>
                 <p className="page-description">
-                  {filteredBooks.length} books • {selectedBooks.size} selected
+                  {filteredBooks.length} books • Page {currentPage} of {totalPages} • {selectedBooks.size} selected
                   {hasUnsavedChanges && " • ⚠️ Unsaved changes"}
                 </p>
               </div>
@@ -557,13 +589,13 @@ export default function BulkEditPage() {
         ) : (
           <Card className="shadow-lg">
             <CardContent className="p-0">
-              <div className="overflow-auto max-h-[70vh] border rounded-lg">
+              <div className="overflow-hidden border rounded-lg">
                 <table ref={tableRef} className="w-full border-collapse bg-white dark:bg-slate-800">
                   <thead className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 sticky top-0 z-10 shadow-sm">
                     <tr>
                       <th className="p-3 text-left border-r border-slate-200 dark:border-slate-600 w-12 bg-slate-100 dark:bg-slate-700">
                         <Checkbox
-                          checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
+                          checked={selectedBooks.size === paginatedBooks.length && paginatedBooks.length > 0}
                           onCheckedChange={toggleSelectAll}
                         />
                       </th>
@@ -571,7 +603,7 @@ export default function BulkEditPage() {
                         <th
                           key={column.key}
                           className="p-3 text-left border-r border-slate-200 dark:border-slate-600 font-semibold text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                          style={{ minWidth: column.width, width: column.width }}
+                          style={{ width: column.width }}
                         >
                           {column.label}
                         </th>
@@ -579,7 +611,7 @@ export default function BulkEditPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredBooks.map((book, rowIndex) => (
+                    {paginatedBooks.map((book, rowIndex) => (
                       <tr
                         key={book.id}
                         className={`border-b border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
@@ -600,7 +632,7 @@ export default function BulkEditPage() {
                                 ? "ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-900/30 shadow-inner"
                                 : "hover:bg-slate-100 dark:hover:bg-slate-700/30"
                             }`}
-                            style={{ minWidth: column.width, width: column.width, maxWidth: column.width }}
+                            style={{ width: column.width }}
                             onClick={() =>
                               setSelectedCell({
                                 row: Number.parseInt(book.id),
@@ -636,6 +668,24 @@ export default function BulkEditPage() {
                                           {option.replace("-", " ")}
                                         </SelectItem>
                                       ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : column.type === "boolean" ? (
+                                  <Select
+                                    value={editValue}
+                                    onValueChange={(value) => {
+                                      setEditValue(value)
+                                      updateBookField(book.id, column.key, value)
+                                      setEditingCell(null)
+                                    }}
+                                    open={true}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs border-blue-300 shadow-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="true">Yes</SelectItem>
+                                      <SelectItem value="false">No</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 ) : isLongText(editValue) ? (
@@ -678,7 +728,7 @@ export default function BulkEditPage() {
                                 className={`p-2 text-xs cursor-cell min-h-[36px] flex items-center transition-colors ${
                                   hasUnsavedChanges &&
                                   books.find((b) => b.id === book.id)?.[column.key as keyof Book] !==
-                                    filteredBooks.find((b) => b.id === book.id)?.[column.key as keyof Book]
+                                    paginatedBooks.find((b) => b.id === book.id)?.[column.key as keyof Book]
                                     ? "bg-orange-100 dark:bg-orange-900/30 border-l-2 border-orange-400"
                                     : ""
                                 }`}
@@ -705,6 +755,20 @@ export default function BulkEditPage() {
                                   <Badge variant="outline" className="text-xs font-medium">
                                     {book.format || "Unknown"}
                                   </Badge>
+                                ) : column.key === "isPublic" ? (
+                                  <Badge
+                                    variant={book.isPublic ? "default" : "secondary"}
+                                    className="text-xs font-medium"
+                                  >
+                                    {book.isPublic ? "Public" : "Private"}
+                                  </Badge>
+                                ) : column.key === "allowBorrow" ? (
+                                  <Badge
+                                    variant={book.allowBorrow ? "default" : "secondary"}
+                                    className="text-xs font-medium"
+                                  >
+                                    {book.allowBorrow ? "Yes" : "No"}
+                                  </Badge>
                                 ) : (
                                   <div className="w-full overflow-hidden">
                                     <div className="truncate" title={getCellValue(book, column.key) || "Unknown"}>
@@ -722,6 +786,66 @@ export default function BulkEditPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
