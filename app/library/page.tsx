@@ -36,6 +36,8 @@ import {
   CheckCircle,
   Save,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -74,11 +76,14 @@ type SortField =
   | "updatedAt"
 type SortDirection = "asc" | "desc"
 
+const ITEMS_PER_PAGE = 20
+
 export default function LibraryPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [books, setBooks] = useState<Book[]>([])
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
+  const [paginatedBooks, setPaginatedBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -94,6 +99,7 @@ export default function LibraryPage() {
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [editFormData, setEditFormData] = useState<Partial<Book>>({})
   const [saving, setSaving] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     if (user) {
@@ -104,6 +110,10 @@ export default function LibraryPage() {
   useEffect(() => {
     filterAndSortBooks()
   }, [books, searchTerm, statusFilter, formatFilter, genreFilter, sortField, sortDirection])
+
+  useEffect(() => {
+    paginateBooks()
+  }, [filteredBooks, currentPage])
 
   const loadBooks = async () => {
     if (!user) return
@@ -190,7 +200,16 @@ export default function LibraryPage() {
     })
 
     setFilteredBooks(filtered)
+    setCurrentPage(1) // Reset to first page when filtering
   }
+
+  const paginateBooks = () => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    setPaginatedBooks(filteredBooks.slice(startIndex, endIndex))
+  }
+
+  const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -217,10 +236,10 @@ export default function LibraryPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedBooks.size === filteredBooks.length) {
+    if (selectedBooks.size === paginatedBooks.length) {
       setSelectedBooks(new Set())
     } else {
-      setSelectedBooks(new Set(filteredBooks.map((book) => book.id)))
+      setSelectedBooks(new Set(paginatedBooks.map((book) => book.id)))
     }
   }
 
@@ -257,6 +276,7 @@ export default function LibraryPage() {
       isbn: book.isbn,
       description: book.description,
       isPublic: book.isPublic,
+      allowBorrow: book.allowBorrow,
     })
     setEditDialogOpen(true)
   }
@@ -344,7 +364,7 @@ export default function LibraryPage() {
           <div className="page-header">
             <h1 className="page-title">My Library</h1>
             <p className="page-description">
-              {filteredBooks.length} of {books.length} books
+              {filteredBooks.length} of {books.length} books • Page {currentPage} of {totalPages || 1}
               {selectedBooks.size > 0 && ` • ${selectedBooks.size} selected`}
             </p>
           </div>
@@ -475,7 +495,7 @@ export default function LibraryPage() {
           </Card>
         ) : viewMode === "grid" ? (
           <div className="book-card-grid">
-            {filteredBooks.map((book) => (
+            {paginatedBooks.map((book) => (
               <Card key={book.id} className="book-card group">
                 <CardContent className="p-4">
                   <div className="flex flex-col space-y-3">
@@ -507,6 +527,11 @@ export default function LibraryPage() {
                         <Badge variant="outline" className="text-xs">
                           {book.format}
                         </Badge>
+                        {book.isPublic && (
+                          <Badge variant="secondary" className="text-xs">
+                            Public
+                          </Badge>
+                        )}
                       </div>
 
                       {book.status === "reading" && book.totalPages && book.pagesRead && (
@@ -568,20 +593,30 @@ export default function LibraryPage() {
             ))}
           </div>
         ) : (
-          /* Table View - Fixed columns that always show */
+          /* Table View - Fixed responsive columns */
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-hidden">
+                <table className="w-full table-fixed">
+                  <colgroup>
+                    <col className="w-12" />
+                    <col className="w-[25%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[14%]" />
+                  </colgroup>
                   <thead className="bg-slate-50 dark:bg-slate-800 border-b">
                     <tr>
-                      <th className="p-3 text-left w-12">
+                      <th className="p-3 text-left">
                         <Checkbox
-                          checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
+                          checked={selectedBooks.size === paginatedBooks.length && paginatedBooks.length > 0}
                           onCheckedChange={toggleSelectAll}
                         />
                       </th>
-                      <th className="p-3 text-left min-w-[200px]">
+                      <th className="p-3 text-left">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -591,7 +626,7 @@ export default function LibraryPage() {
                           Title {getSortIcon("title")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left min-w-[150px]">
+                      <th className="p-3 text-left">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -601,7 +636,7 @@ export default function LibraryPage() {
                           Authors {getSortIcon("authors")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left min-w-[120px]">
+                      <th className="p-3 text-left">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -611,7 +646,7 @@ export default function LibraryPage() {
                           Genre {getSortIcon("genre")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left min-w-[100px]">
+                      <th className="p-3 text-left">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -621,7 +656,7 @@ export default function LibraryPage() {
                           Status {getSortIcon("status")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left min-w-[90px]">
+                      <th className="p-3 text-left">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -631,32 +666,12 @@ export default function LibraryPage() {
                           Format {getSortIcon("format")}
                         </Button>
                       </th>
-                      <th className="p-3 text-left min-w-[80px]">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSort("totalPages")}
-                          className="font-medium hover:bg-transparent"
-                        >
-                          Pages {getSortIcon("totalPages")}
-                        </Button>
-                      </th>
-                      <th className="p-3 text-left min-w-[120px]">Progress</th>
-                      <th className="p-3 text-left min-w-[100px]">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSort("updatedAt")}
-                          className="font-medium hover:bg-transparent"
-                        >
-                          Updated {getSortIcon("updatedAt")}
-                        </Button>
-                      </th>
-                      <th className="p-3 text-left w-20">Actions</th>
+                      <th className="p-3 text-left">Progress</th>
+                      <th className="p-3 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredBooks.map((book) => (
+                    {paginatedBooks.map((book) => (
                       <tr
                         key={book.id}
                         className={`border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
@@ -682,7 +697,7 @@ export default function LibraryPage() {
                                 <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                               )}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <Link href={`/book/${book.id}`}>
                                 <p className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate">
                                   {book.title || "Untitled"}
@@ -691,6 +706,18 @@ export default function LibraryPage() {
                               {book.subtitle && (
                                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{book.subtitle}</p>
                               )}
+                              <div className="flex items-center gap-1 mt-1">
+                                {book.isPublic && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Public
+                                  </Badge>
+                                )}
+                                {book.allowBorrow && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Borrowable
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -700,7 +727,9 @@ export default function LibraryPage() {
                           </p>
                         </td>
                         <td className="p-3">
-                          <p className="text-sm text-slate-600 dark:text-slate-300">{book.genre || "Unknown"}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                            {book.genre || "Unknown"}
+                          </p>
                         </td>
                         <td className="p-3">
                           <Badge className={`text-xs ${getStatusBadgeClass(book.status)}`}>
@@ -714,19 +743,8 @@ export default function LibraryPage() {
                           </Badge>
                         </td>
                         <td className="p-3">
-                          <div className="text-sm">
-                            {book.totalPages ? (
-                              <span className="text-slate-600 dark:text-slate-300">
-                                {book.totalPages.toLocaleString()}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">Unknown</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-3">
                           {book.status === "reading" && book.totalPages && book.pagesRead ? (
-                            <div className="space-y-1 min-w-24">
+                            <div className="space-y-1">
                               <div className="flex justify-between text-xs">
                                 <span className="text-slate-500 dark:text-slate-400">
                                   {book.pagesRead} / {book.totalPages}
@@ -743,11 +761,6 @@ export default function LibraryPage() {
                           ) : (
                             <span className="text-slate-400 text-sm">—</span>
                           )}
-                        </td>
-                        <td className="p-3">
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {book.updatedAt ? new Date(book.updatedAt).toLocaleDateString() : "Unknown"}
-                          </p>
                         </td>
                         <td className="p-3">
                           <DropdownMenu>
@@ -791,6 +804,66 @@ export default function LibraryPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -862,7 +935,7 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
                   <Select
@@ -910,6 +983,21 @@ export default function LibraryPage() {
                     <SelectContent>
                       <SelectItem value="false">Private</SelectItem>
                       <SelectItem value="true">Public</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Borrowable</label>
+                  <Select
+                    value={editFormData.allowBorrow ? "true" : "false"}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, allowBorrow: value === "true" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="false">No</SelectItem>
+                      <SelectItem value="true">Yes</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

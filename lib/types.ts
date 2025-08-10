@@ -21,6 +21,8 @@ export interface Book {
   }
   notes: Note[]
   isPublic?: boolean // New field for public visibility
+  allowBorrow?: boolean // New field for borrowing availability
+  description?: string // Book description
   createdAt: Date
   updatedAt: Date
 }
@@ -41,4 +43,16 @@ export interface UserStats {
   topTags: Array<{ tag: string; count: number }>
   topAuthors: Array<{ author: string; count: number }>
   averagePagesPerBook: number
+}
+
+export interface BorrowRequest {
+  id?: string
+  bookId: string
+  borrowerUserId: string
+  borrowerName: string
+  borrowerEmail: string
+  ownerUserId: string
+  message: string
+  status: "pending" | "approved" | "rejected"
+  createdAt: Date
 }
