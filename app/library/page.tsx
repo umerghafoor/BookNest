@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useAuth } from "@/components/auth-provider"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,10 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Pin,
+  PinOff,
+  ImageIcon,
+  Upload,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -62,6 +67,8 @@ import { doc, deleteDoc, updateDoc } from "firebase/firestore"
 import { db, isFirebaseConfigured } from "@/lib/firebase"
 import { loadUserBooks } from "@/lib/data"
 import { mockFirestore } from "@/lib/mock-data"
+import { setBookPinned } from "@/lib/book-actions"
+import { generateThumbnailDataUrl } from "@/lib/thumbnail-utils"
 import { useToast } from "@/hooks/use-toast"
 import { Fab } from "@/components/fab"
 import type { Book } from "@/lib/types"
@@ -289,6 +296,7 @@ export default function LibraryPage() {
       description: book.description,
       isPublic: book.isPublic,
       allowBorrow: book.allowBorrow,
+      coverImage: book.coverImage,
     })
     setEditDialogOpen(true)
   }
@@ -325,6 +333,49 @@ export default function LibraryPage() {
       })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleTogglePin = async (book: Book) => {
+    const nextPinned = !book.pinned
+    // Optimistic update so the UI feels instant.
+    setBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, pinned: nextPinned } : b)))
+    try {
+      await setBookPinned(book.id, nextPinned)
+      toast({
+        title: nextPinned ? "Pinned to favorites" : "Unpinned",
+        description: `"${book.title}" ${nextPinned ? "now appears on your dashboard." : "removed from favorites."}`,
+      })
+    } catch (error) {
+      console.error("Error toggling pin:", error)
+      // Roll back on failure.
+      setBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, pinned: book.pinned } : b)))
+      toast({
+        title: "Error",
+        description: "Failed to update favorite. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = "" // allow re-selecting the same file
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please choose an image file.", variant: "destructive" })
+      return
+    }
+    try {
+      const dataUrl = await generateThumbnailDataUrl(file)
+      setEditFormData((prev) => ({ ...prev, coverImage: dataUrl }))
+    } catch (error) {
+      console.error("Error processing cover image:", error)
+      toast({
+        title: "Error",
+        description: "Failed to process image. Please try a different file.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -577,7 +628,12 @@ export default function LibraryPage() {
               <Card key={book.id} className="book-card group">
                 <CardContent className="p-4">
                   <div className="flex flex-col space-y-3">
-                    <div className="w-full h-32 bg-primary-container rounded flex items-center justify-center">
+                    <div className="relative w-full h-32 bg-primary-container rounded flex items-center justify-center">
+                      {book.pinned && (
+                        <span className="absolute top-1.5 right-1.5 z-10 rounded-full bg-primary p-1 text-on-primary shadow">
+                          <Pin className="h-3 w-3" />
+                        </span>
+                      )}
                       {book.coverImage ? (
                         <img
                           src={book.coverImage || "/placeholder.svg"}
@@ -640,6 +696,19 @@ export default function LibraryPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleTogglePin(book)}>
+                              {book.pinned ? (
+                                <>
+                                  <PinOff className="h-4 w-4 mr-2" />
+                                  Unpin
+                                </>
+                              ) : (
+                                <>
+                                  <Pin className="h-4 w-4 mr-2" />
+                                  Pin to favorites
+                                </>
+                              )}
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEditDialog(book)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Quick Edit
@@ -856,6 +925,19 @@ export default function LibraryPage() {
                                   View
                                 </Link>
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleTogglePin(book)}>
+                                {book.pinned ? (
+                                  <>
+                                    <PinOff className="h-4 w-4 mr-2" />
+                                    Unpin
+                                  </>
+                                ) : (
+                                  <>
+                                    <Pin className="h-4 w-4 mr-2" />
+                                    Pin to favorites
+                                  </>
+                                )}
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openEditDialog(book)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Quick Edit
@@ -962,6 +1044,53 @@ export default function LibraryPage() {
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
+              {/* Cover image */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Cover Image
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-28 bg-primary-container rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {editFormData.coverImage ? (
+                      <img
+                        src={editFormData.coverImage || "/placeholder.svg"}
+                        alt="Cover preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <BookOpen className="h-8 w-8 text-primary" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <label className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        {editFormData.coverImage ? "Replace" : "Upload"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={handleCoverSelect}
+                        />
+                      </label>
+                    </Button>
+                    {editFormData.coverImage && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600"
+                        onClick={() => setEditFormData({ ...editFormData, coverImage: "" })}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Title</label>

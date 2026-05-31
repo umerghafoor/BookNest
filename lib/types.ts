@@ -23,6 +23,7 @@ export interface Book {
   isPublic?: boolean // New field for public visibility
   allowBorrow?: boolean // New field for borrowing availability
   description?: string // Book description
+  pinned?: boolean // Pinned as a favorite; surfaced on the dashboard
   createdAt: Date
   updatedAt: Date
 }

@@ -50,6 +50,49 @@ export async function generateThumbnail(file: File): Promise<File> {
   })
 }
 
+/**
+ * Resizes an image File to book-cover dimensions and returns it as a base64
+ * data URL. Used to store covers inline on the book document so uploads work
+ * the same way whether Firebase Storage is configured or we're in demo mode.
+ */
+export async function generateThumbnailDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      const targetWidth = 200
+      const targetHeight = 280
+      canvas.width = targetWidth
+      canvas.height = targetHeight
+
+      if (ctx) {
+        const scale = Math.min(targetWidth / img.width, targetHeight / img.height)
+        const scaledWidth = img.width * scale
+        const scaledHeight = img.height * scale
+        const x = (targetWidth - scaledWidth) / 2
+        const y = (targetHeight - scaledHeight) / 2
+
+        ctx.fillStyle = "#ffffff"
+        ctx.fillRect(0, 0, targetWidth, targetHeight)
+        ctx.drawImage(img, x, y, scaledWidth, scaledHeight)
+      }
+
+      URL.revokeObjectURL(objectUrl)
+      resolve(canvas.toDataURL("image/jpeg", 0.8))
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error("Failed to load image"))
+    }
+
+    img.src = objectUrl
+  })
+}
+
 export function generateInitialThumbnail(title: string): string {
   const canvas = document.createElement("canvas")
   const ctx = canvas.getContext("2d")

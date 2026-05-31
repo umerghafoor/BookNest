@@ -7,11 +7,13 @@ import { Navigation } from "@/components/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BookOpen, Plus, TrendingUp, Clock, Target, Calendar, Users, Search, Zap } from "lucide-react"
+import { BookOpen, Plus, TrendingUp, Clock, Target, Calendar, Users, Search, Zap, Pin, PinOff, Upload } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { loadUserBooks } from "@/lib/data"
+import { setBookPinned, setBookCover } from "@/lib/book-actions"
+import { generateThumbnailDataUrl } from "@/lib/thumbnail-utils"
+import { useToast } from "@/hooks/use-toast"
 import type { Book, ReadingLog } from "@/lib/types"
 import { loadReadingLogs } from "@/lib/reading-log"
 import { Fab } from "@/components/fab"
@@ -31,6 +33,7 @@ import "@/styles/components.css"
 export default function DashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
   const [stats, setStats] = useState({
     totalBooks: 0,
     currentlyReading: 0,
@@ -39,6 +42,7 @@ export default function DashboardPage() {
   })
   const [recentBooks, setRecentBooks] = useState<Book[]>([])
   const [currentlyReading, setCurrentlyReading] = useState<Book[]>([])
+  const [pinnedBooks, setPinnedBooks] = useState<Book[]>([])
   const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
   const [loading, setLoading] = useState(true)
   const [quickSearch, setQuickSearch] = useState("")
@@ -53,14 +57,7 @@ export default function DashboardPage() {
     if (!user) return
 
     try {
-      const booksRef = collection(db, "books")
-      const userBooksQuery = query(booksRef, where("userId", "==", user.uid))
-      const snapshot = await getDocs(userBooksQuery)
-
-      const books = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Book[]
+      const books = await loadUserBooks(user.uid)
 
       const totalBooks = books.length
       const currentlyReadingBooks = books.filter((book) => book.status === "reading")
@@ -70,14 +67,16 @@ export default function DashboardPage() {
       setStats({ totalBooks, currentlyReading: currentlyReadingBooks.length, booksRead, totalPages })
       setCurrentlyReading(currentlyReadingBooks.slice(0, 3))
 
-      // Get recent books (last updated)
-      const recentBooksQuery = query(booksRef, where("userId", "==", user.uid), orderBy("updatedAt", "desc"), limit(6))
-      const recentSnapshot = await getDocs(recentBooksQuery)
-      const recent = recentSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Book[]
+      // Pinned favorites, most recently updated first.
+      const pinned = books
+        .filter((book) => book.pinned)
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      setPinnedBooks(pinned)
 
+      // Recent activity (last updated)
+      const recent = [...books]
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 6)
       setRecentBooks(recent)
 
       const logs = await loadReadingLogs(user.uid)
@@ -93,6 +92,45 @@ export default function DashboardPage() {
     e.preventDefault()
     if (quickSearch.trim()) {
       router.push(`/library?search=${encodeURIComponent(quickSearch.trim())}`)
+    }
+  }
+
+  const handleUnpin = async (book: Book) => {
+    setPinnedBooks((prev) => prev.filter((b) => b.id !== book.id))
+    try {
+      await setBookPinned(book.id, false)
+      toast({ title: "Unpinned", description: `"${book.title}" removed from favorites.` })
+    } catch (error) {
+      console.error("Error unpinning book:", error)
+      setPinnedBooks((prev) => [...prev, book])
+      toast({
+        title: "Error",
+        description: "Failed to unpin. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCoverUpload = async (book: Book, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = "" // allow re-selecting the same file
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please choose an image file.", variant: "destructive" })
+      return
+    }
+    try {
+      const dataUrl = await generateThumbnailDataUrl(file)
+      setPinnedBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, coverImage: dataUrl } : b)))
+      await setBookCover(book.id, dataUrl)
+      toast({ title: "Cover updated", description: `Updated the cover for "${book.title}".` })
+    } catch (error) {
+      console.error("Error uploading cover:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update cover. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -245,6 +283,80 @@ export default function DashboardPage() {
               </div>
             </Link>
           </div>
+        )}
+
+        {/* Pinned Favorites */}
+        {!loading && pinnedBooks.length > 0 && (
+          <Card className="card-clean mb-8">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Pin className="h-5 w-5 text-primary" />
+                  <div>
+                    <CardTitle className="text-lg">Pinned Favorites</CardTitle>
+                    <CardDescription>Your favorite books, front and center</CardDescription>
+                  </div>
+                </div>
+                <Link href="/library">
+                  <Button variant="outline" size="sm">
+                    Manage
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                {pinnedBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    className="group relative flex flex-col rounded-[var(--radius-md)] border border-border/60 bg-card p-3"
+                  >
+                    {/* Unpin button */}
+                    <button
+                      type="button"
+                      onClick={() => handleUnpin(book)}
+                      aria-label={`Unpin ${book.title}`}
+                      className="absolute right-2 top-2 z-10 rounded-full bg-background/90 p-1 text-muted-foreground opacity-0 shadow transition-opacity hover:text-foreground group-hover:opacity-100"
+                    >
+                      <PinOff className="h-3.5 w-3.5" />
+                    </button>
+
+                    <Link href={`/book/${book.id}`}>
+                      <div className="relative mb-2 flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded bg-primary-container">
+                        {book.coverImage ? (
+                          <img
+                            src={book.coverImage || "/placeholder.svg"}
+                            alt={book.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <BookOpen className="h-8 w-8 text-primary" />
+                        )}
+                      </div>
+                    </Link>
+
+                    <h3 className="line-clamp-2 text-sm font-medium text-foreground">{book.title}</h3>
+                    <p className="line-clamp-1 text-xs text-muted-foreground">
+                      {book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
+                    </p>
+
+                    <Button type="button" variant="outline" size="sm" className="mt-2 w-full" asChild>
+                      <label className="cursor-pointer">
+                        <Upload className="h-3.5 w-3.5 mr-1.5" />
+                        {book.coverImage ? "Replace cover" : "Add cover"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={(e) => handleCoverUpload(book, e)}
+                        />
+                      </label>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Reading Streak */}
