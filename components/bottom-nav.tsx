@@ -39,14 +39,15 @@ export function BottomNav() {
       />
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 z-50 mx-auto max-w-md rounded-[1.75rem] border border-border/60 bg-background/95 px-2 shadow-xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 md:hidden"
+        className="fixed inset-x-0 z-50 mx-auto max-w-md rounded-[1.75rem] border border-border/60 bg-background/95 px-2 shadow-xl shadow-black/10 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/60 md:hidden"
         style={{
           left: "max(1rem, env(safe-area-inset-left))",
           right: "max(1rem, env(safe-area-inset-right))",
           bottom: "calc(0.75rem + env(safe-area-inset-bottom))",
-          // Promote to its own GPU layer so mobile pull-to-refresh / scroll
-          // bounce can't repaint or displace the pinned bar.
-          transform: "translateZ(0)",
+          // Hint the compositor to keep the bar on its own layer so mobile
+          // pull-to-refresh / scroll bounce can't repaint it. We avoid a
+          // `transform` here on purpose: a transform creates a containing block
+          // that clips backdrop-filter and would defeat the blur.
           willChange: "transform",
         }}
       >
