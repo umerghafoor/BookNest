@@ -1,10 +1,12 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Roboto, Roboto_Flex } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { ServiceWorkerRegister } from "@/components/service-worker-register"
+import { BottomNav } from "@/components/bottom-nav"
 
 // Material 3 typography: Roboto for body, Roboto Flex as the expressive display face
 const roboto = Roboto({
@@ -22,6 +24,31 @@ export const metadata: Metadata = {
   title: "BookNest — Smart Book Organizer",
   description: "Manage your physical and digital books in one place",
   generator: "v0.dev",
+  applicationName: "BookNest",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BookNest",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#6750a4" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1b1f" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover", // extend under notches; pair with safe-area insets
 }
 
 export default function RootLayout({
@@ -35,9 +62,11 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
             {children}
+            <BottomNav />
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   )
