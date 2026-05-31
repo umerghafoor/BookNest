@@ -65,7 +65,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { doc, deleteDoc, updateDoc } from "firebase/firestore"
 import { db, isFirebaseConfigured } from "@/lib/firebase"
-import { loadUserBooks } from "@/lib/data"
+import { useBooks } from "@/components/books-provider"
 import { mockFirestore } from "@/lib/mock-data"
 import { setBookPinned } from "@/lib/book-actions"
 import { generateThumbnailDataUrl } from "@/lib/thumbnail-utils"
@@ -103,10 +103,11 @@ function FilterChip({ label, onClear }: { label: string; onClear: () => void }) 
 export default function LibraryPage() {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [books, setBooks] = useState<Book[]>([])
+  // Shared cache: books render instantly on navigation and revalidate in the
+  // background. Mutations go through applyLocalUpdate / refresh.
+  const { books, loading, applyLocalUpdate, refresh } = useBooks()
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
   const [paginatedBooks, setPaginatedBooks] = useState<Book[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [formatFilter, setFormatFilter] = useState("all")
@@ -125,36 +126,12 @@ export default function LibraryPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      loadBooks()
-    }
-  }, [user])
-
-  useEffect(() => {
     filterAndSortBooks()
   }, [books, searchTerm, statusFilter, formatFilter, genreFilter, sortField, sortDirection])
 
   useEffect(() => {
     paginateBooks()
   }, [filteredBooks, currentPage])
-
-  const loadBooks = async () => {
-    if (!user) return
-
-    try {
-      const booksData = await loadUserBooks(user.uid)
-      setBooks(booksData)
-    } catch (error) {
-      console.error("Error loading books:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load books. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const filterAndSortBooks = () => {
     let filtered = books
@@ -265,7 +242,7 @@ export default function LibraryPage() {
       } else {
         await mockFirestore.deleteBook(book.id)
       }
-      setBooks(books.filter((b) => b.id !== book.id))
+      await refresh()
       toast({
         title: "Book deleted",
         description: `"${book.title}" has been removed from your library.`,
@@ -315,7 +292,7 @@ export default function LibraryPage() {
         await mockFirestore.updateBook(editingBook.id, { ...editFormData })
       }
 
-      setBooks(books.map((b) => (b.id === editingBook.id ? { ...b, ...editFormData, updatedAt: new Date() } : b)))
+      applyLocalUpdate(editingBook.id, { ...editFormData, updatedAt: new Date() })
       setEditDialogOpen(false)
       setEditingBook(null)
       setEditFormData({})
@@ -339,7 +316,7 @@ export default function LibraryPage() {
   const handleTogglePin = async (book: Book) => {
     const nextPinned = !book.pinned
     // Optimistic update so the UI feels instant.
-    setBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, pinned: nextPinned } : b)))
+    applyLocalUpdate(book.id, { pinned: nextPinned })
     try {
       await setBookPinned(book.id, nextPinned)
       toast({
@@ -349,7 +326,7 @@ export default function LibraryPage() {
     } catch (error) {
       console.error("Error toggling pin:", error)
       // Roll back on failure.
-      setBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, pinned: book.pinned } : b)))
+      applyLocalUpdate(book.id, { pinned: book.pinned })
       toast({
         title: "Error",
         description: "Failed to update favorite. Please try again.",

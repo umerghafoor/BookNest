@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { Search, Plus, BookOpen, Loader2, ArrowLeft } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { useBooks } from "@/components/books-provider"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { loadUserBooks } from "@/lib/data"
 import { updateBookFields } from "@/lib/book-actions"
 import { logProgressDelta } from "@/lib/reading-log"
 import { useToast } from "@/hooks/use-toast"
@@ -27,39 +27,22 @@ interface QuickProgressDialogProps {
 export function QuickProgressDialog({ open, onOpenChange }: QuickProgressDialogProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  // Reuse the shared cache so the list is instant — no per-open fetch.
+  const { books, loading, applyLocalUpdate } = useBooks()
 
-  const [books, setBooks] = useState<Book[]>([])
-  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<Book | null>(null)
   const [pages, setPages] = useState("")
   const [saving, setSaving] = useState(false)
 
-  // Load the user's books when the sheet opens; reset state when it closes.
+  // Reset transient UI state whenever the sheet closes.
   useEffect(() => {
     if (!open) {
       setSearch("")
       setSelected(null)
       setPages("")
-      return
     }
-    if (!user) return
-    let active = true
-    setLoading(true)
-    loadUserBooks(user.uid)
-      .then((data) => {
-        if (active) setBooks(data)
-      })
-      .catch(() => {
-        if (active) toast({ title: "Couldn't load your books", variant: "destructive" })
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => {
-      active = false
-    }
-  }, [open, user, toast])
+  }, [open])
 
   const results = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -109,6 +92,8 @@ export function QuickProgressDialog({ open, onOpenChange }: QuickProgressDialogP
 
       await updateBookFields(selected.id, fields)
       await logProgressDelta(user.uid, previous, next)
+      // Patch the shared cache so the new progress shows everywhere instantly.
+      applyLocalUpdate(selected.id, fields)
 
       toast({
         title: "Progress saved",

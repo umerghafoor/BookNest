@@ -9,13 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, Plus, TrendingUp, Clock, Target, Calendar, Users, Search, Zap, Pin, PinOff, Upload } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useState } from "react"
-import { loadUserBooks } from "@/lib/data"
+import { useMemo, useState } from "react"
 import { setBookPinned, setBookCover } from "@/lib/book-actions"
 import { generateThumbnailDataUrl } from "@/lib/thumbnail-utils"
 import { useToast } from "@/hooks/use-toast"
-import type { Book, ReadingLog } from "@/lib/types"
-import { loadReadingLogs } from "@/lib/reading-log"
+import type { Book } from "@/lib/types"
+import { useBooks } from "@/components/books-provider"
 import { Fab } from "@/components/fab"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
@@ -34,59 +33,41 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
-  const [stats, setStats] = useState({
-    totalBooks: 0,
-    currentlyReading: 0,
-    booksRead: 0,
-    totalPages: 0,
-  })
-  const [recentBooks, setRecentBooks] = useState<Book[]>([])
-  const [currentlyReading, setCurrentlyReading] = useState<Book[]>([])
-  const [pinnedBooks, setPinnedBooks] = useState<Book[]>([])
-  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
-  const [loading, setLoading] = useState(true)
+  // Books/logs come from the shared cache: instant on navigation, revalidated
+  // in the background. All derived views are memoized from that data.
+  const { books, readingLogs, loading, applyLocalUpdate } = useBooks()
   const [quickSearch, setQuickSearch] = useState("")
 
-  useEffect(() => {
-    if (user) {
-      loadDashboardData()
-    }
-  }, [user])
+  const stats = useMemo(
+    () => ({
+      totalBooks: books.length,
+      currentlyReading: books.filter((b) => b.status === "reading").length,
+      booksRead: books.filter((b) => b.status === "read").length,
+      totalPages: books.reduce((sum, b) => sum + (b.pagesRead || 0), 0),
+    }),
+    [books],
+  )
 
-  const loadDashboardData = async () => {
-    if (!user) return
+  const currentlyReading = useMemo(
+    () => books.filter((b) => b.status === "reading").slice(0, 3),
+    [books],
+  )
 
-    try {
-      const books = await loadUserBooks(user.uid)
+  const pinnedBooks = useMemo(
+    () =>
+      books
+        .filter((b) => b.pinned)
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+    [books],
+  )
 
-      const totalBooks = books.length
-      const currentlyReadingBooks = books.filter((book) => book.status === "reading")
-      const booksRead = books.filter((book) => book.status === "read").length
-      const totalPages = books.reduce((sum, book) => sum + (book.pagesRead || 0), 0)
-
-      setStats({ totalBooks, currentlyReading: currentlyReadingBooks.length, booksRead, totalPages })
-      setCurrentlyReading(currentlyReadingBooks.slice(0, 3))
-
-      // Pinned favorites, most recently updated first.
-      const pinned = books
-        .filter((book) => book.pinned)
+  const recentBooks = useMemo(
+    () =>
+      [...books]
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      setPinnedBooks(pinned)
-
-      // Recent activity (last updated)
-      const recent = [...books]
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 6)
-      setRecentBooks(recent)
-
-      const logs = await loadReadingLogs(user.uid)
-      setReadingLogs(logs)
-    } catch (error) {
-      console.error("Error loading dashboard data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+        .slice(0, 6),
+    [books],
+  )
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,13 +77,13 @@ export default function DashboardPage() {
   }
 
   const handleUnpin = async (book: Book) => {
-    setPinnedBooks((prev) => prev.filter((b) => b.id !== book.id))
+    applyLocalUpdate(book.id, { pinned: false })
     try {
       await setBookPinned(book.id, false)
       toast({ title: "Unpinned", description: `"${book.title}" removed from favorites.` })
     } catch (error) {
       console.error("Error unpinning book:", error)
-      setPinnedBooks((prev) => [...prev, book])
+      applyLocalUpdate(book.id, { pinned: true })
       toast({
         title: "Error",
         description: "Failed to unpin. Please try again.",
@@ -121,7 +102,7 @@ export default function DashboardPage() {
     }
     try {
       const dataUrl = await generateThumbnailDataUrl(file)
-      setPinnedBooks((prev) => prev.map((b) => (b.id === book.id ? { ...b, coverImage: dataUrl } : b)))
+      applyLocalUpdate(book.id, { coverImage: dataUrl })
       await setBookCover(book.id, dataUrl)
       toast({ title: "Cover updated", description: `Updated the cover for "${book.title}".` })
     } catch (error) {

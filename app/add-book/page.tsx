@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useAuth } from "@/components/auth-provider"
+import { useBooks } from "@/components/books-provider"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,7 @@ import { generateThumbnail } from "@/lib/thumbnail-utils"
 export default function AddBookPage() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { refresh } = useBooks()
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -138,6 +140,9 @@ export default function AddBookPage() {
       const cleanBookData = Object.fromEntries(Object.entries(bookData).filter(([_, value]) => value !== null))
 
       await addDoc(collection(db, "books"), cleanBookData)
+      // Pull the new book into the shared cache before navigating, so it's
+      // already present when the library renders.
+      await refresh()
 
       toast({
         title: "Book added!",

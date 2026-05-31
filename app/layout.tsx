@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Roboto, Roboto_Flex } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/auth-provider"
+import { BooksProvider } from "@/components/books-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { ServiceWorkerRegister } from "@/components/service-worker-register"
@@ -61,9 +62,11 @@ export default function RootLayout({
       <body className="font-sans">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            {children}
-            <BottomNav />
-            <Toaster />
+            <BooksProvider>
+              {children}
+              <BottomNav />
+              <Toaster />
+            </BooksProvider>
           </AuthProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
