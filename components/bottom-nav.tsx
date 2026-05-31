@@ -39,16 +39,15 @@ export function BottomNav() {
       />
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 z-50 mx-auto max-w-md rounded-[1.75rem] border border-border/60 bg-background/95 px-2 shadow-xl shadow-black/10 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-background/60 md:hidden"
+        className="fixed inset-x-0 z-50 mx-auto max-w-md rounded-[1.75rem] border border-primary/20 bg-primary-container px-2 text-on-primary-container shadow-xl shadow-black/10 backdrop-blur-sm backdrop-saturate-150 supports-[backdrop-filter]:bg-primary-container/60 md:hidden"
         style={{
           left: "max(1rem, env(safe-area-inset-left))",
           right: "max(1rem, env(safe-area-inset-right))",
           bottom: "calc(0.75rem + env(safe-area-inset-bottom))",
-          // Hint the compositor to keep the bar on its own layer so mobile
-          // pull-to-refresh / scroll bounce can't repaint it. We avoid a
-          // `transform` here on purpose: a transform creates a containing block
-          // that clips backdrop-filter and would defeat the blur.
-          willChange: "transform",
+          // NOTE: deliberately no `transform` / `will-change: transform` here.
+          // Both promote the bar to its own composited layer, which creates a
+          // containing block that clips `backdrop-filter` and silently kills
+          // the blur. The fixed bar stays put without them.
         }}
       >
       <ul className="flex items-stretch justify-around">
@@ -63,7 +62,7 @@ export function BottomNav() {
                   type="button"
                   onClick={() => setQuickOpen(true)}
                   aria-label="Log reading progress"
-                  className="m3-state-layer -mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 ease-emphasized active:scale-95"
+                  className="m3-state-layer -mt-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/40 transition-transform duration-200 ease-emphasized hover:scale-105 active:scale-95"
                 >
                   <Icon className="h-6 w-6" />
                 </button>
@@ -76,18 +75,21 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
+                className={`flex h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors duration-300 ease-emphasized ${
+                  isActive ? "text-on-primary-container" : "text-on-primary-container/60"
                 }`}
               >
+                {/* Active state: a colored pill behind the icon, with the label
+                    in the same accent color below it. Equal-width slots keep the
+                    bar balanced. */}
                 <span
-                  className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
-                    isActive ? "bg-primary-container text-on-primary-container" : ""
+                  className={`flex h-7 w-12 items-center justify-center rounded-full transition-all duration-300 ease-emphasized ${
+                    isActive ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : ""
                   }`}
                 >
                   <Icon className="h-5 w-5" />
                 </span>
-                <span>{tab.label}</span>
+                <span className={isActive ? "text-primary" : ""}>{tab.label}</span>
               </Link>
             </li>
           )
