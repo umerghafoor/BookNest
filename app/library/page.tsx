@@ -568,8 +568,11 @@ export default function LibraryPage() {
           </Card>
         ) : (
           <>
-          {/* Card/grid view — always used on mobile; on desktop when grid is selected */}
-          <div className={`book-card-grid ${viewMode === "grid" ? "" : "md:hidden"}`}>
+          {/* Card/grid view — always used on mobile; on desktop when grid is selected.
+              The visibility wrapper is a plain div so its `md:hidden` reliably wins
+              over the `.book-card-grid` component class's own `display: grid`. */}
+          <div className={viewMode === "grid" ? "block" : "block md:hidden"}>
+          <div className="book-card-grid">
             {paginatedBooks.map((book) => (
               <Card key={book.id} className="book-card group">
                 <CardContent className="p-4">
@@ -666,6 +669,7 @@ export default function LibraryPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
           </div>
 
           {/* Table view — desktop only, and only when the table view is selected */}
