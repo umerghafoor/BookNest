@@ -209,3 +209,5 @@ export function ReadingStreak({ logs, loading }: ReadingStreakProps) {
     </Card>
   )
 }
+
+export default ReadingStreak

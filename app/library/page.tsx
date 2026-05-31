@@ -374,7 +374,7 @@ export default function LibraryPage() {
 
       <div className="content-container">
         {/* Header */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-6">
           <div className="page-header">
             <h1 className="page-title">My Library</h1>
             <p className="page-description">
@@ -383,14 +383,14 @@ export default function LibraryPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Link href="/bulk-edit">
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Bulk Edit
+            <Link href="/bulk-edit" className="flex-1 sm:flex-none">
+              <Button variant="outline" className="w-full">
+                <Edit className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Bulk Edit</span>
               </Button>
             </Link>
-            <Link href="/add-book">
-              <Button className="btn-primary">
+            <Link href="/add-book" className="flex-1 sm:flex-none">
+              <Button className="btn-primary w-full">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Book
               </Button>
@@ -428,9 +428,9 @@ export default function LibraryPage() {
             </div>
 
             {/* Filters Row */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -446,7 +446,7 @@ export default function LibraryPage() {
               </Select>
 
               <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Format" />
                 </SelectTrigger>
                 <SelectContent>
@@ -458,7 +458,7 @@ export default function LibraryPage() {
               </Select>
 
               <Select value={genreFilter} onValueChange={setGenreFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Genre" />
                 </SelectTrigger>
                 <SelectContent>
@@ -471,8 +471,8 @@ export default function LibraryPage() {
                 </SelectContent>
               </Select>
 
-              {/* View Toggle */}
-              <div className="view-toggle ml-auto">
+              {/* View Toggle — desktop only; mobile is always the card/grid view */}
+              <div className="view-toggle ml-auto hidden md:flex">
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`view-toggle-btn ${viewMode === "grid" ? "view-toggle-btn-active" : "view-toggle-btn-inactive"}`}
@@ -549,8 +549,10 @@ export default function LibraryPage() {
               )}
             </CardContent>
           </Card>
-        ) : viewMode === "grid" ? (
-          <div className="book-card-grid">
+        ) : (
+          <>
+          {/* Card/grid view — always used on mobile; on desktop when grid is selected */}
+          <div className={`book-card-grid ${viewMode === "grid" ? "" : "md:hidden"}`}>
             {paginatedBooks.map((book) => (
               <Card key={book.id} className="book-card group">
                 <CardContent className="p-4">
@@ -648,9 +650,10 @@ export default function LibraryPage() {
               </Card>
             ))}
           </div>
-        ) : (
-          /* Table View - Fixed responsive columns */
-          <Card>
+
+          {/* Table view — desktop only, and only when the table view is selected */}
+          {viewMode === "table" && (
+          <Card className="hidden md:block">
             <CardContent className="p-0">
               <div className="overflow-hidden">
                 <table className="w-full table-fixed">
@@ -863,14 +866,16 @@ export default function LibraryPage() {
               </div>
             </CardContent>
           </Card>
+          )}
+          </>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
           <Card className="mt-6">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+                <div className="text-sm text-muted-foreground text-center sm:text-left">
                   Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                   {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
                 </div>
@@ -882,7 +887,7 @@ export default function LibraryPage() {
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    <span className="hidden sm:inline">Previous</span>
                   </Button>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -916,7 +921,7 @@ export default function LibraryPage() {
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                   >
-                    Next
+                    <span className="hidden sm:inline">Next</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -936,7 +941,7 @@ export default function LibraryPage() {
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Title</label>
                   <Input
@@ -972,7 +977,7 @@ export default function LibraryPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Genre</label>
                   <Input
@@ -991,7 +996,7 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
                   <Select
@@ -1059,7 +1064,7 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Total Pages</label>
                   <Input

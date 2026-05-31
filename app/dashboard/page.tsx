@@ -14,8 +14,17 @@ import { collection, query, where, getDocs, orderBy, limit } from "firebase/fire
 import { db } from "@/lib/firebase"
 import type { Book, ReadingLog } from "@/lib/types"
 import { loadReadingLogs } from "@/lib/reading-log"
-import { ReadingStreak } from "@/components/reading-streak"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
+
+// Lazy-load the reading-streak section so its recharts dependency is split out
+// of the dashboard's initial bundle and only fetched when this page renders.
+const ReadingStreak = dynamic(() => import("@/components/reading-streak"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-72 animate-pulse rounded-[var(--radius-lg)] border border-border/60 bg-card" />
+  ),
+})
 import "@/styles/components.css"
 
 export default function DashboardPage() {
