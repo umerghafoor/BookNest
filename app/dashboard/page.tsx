@@ -12,7 +12,9 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import type { Book } from "@/lib/types"
+import type { Book, ReadingLog } from "@/lib/types"
+import { loadReadingLogs } from "@/lib/reading-log"
+import { ReadingStreak } from "@/components/reading-streak"
 import { useRouter } from "next/navigation"
 import "@/styles/components.css"
 
@@ -27,6 +29,7 @@ export default function DashboardPage() {
   })
   const [recentBooks, setRecentBooks] = useState<Book[]>([])
   const [currentlyReading, setCurrentlyReading] = useState<Book[]>([])
+  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
   const [loading, setLoading] = useState(true)
   const [quickSearch, setQuickSearch] = useState("")
 
@@ -66,6 +69,9 @@ export default function DashboardPage() {
       })) as Book[]
 
       setRecentBooks(recent)
+
+      const logs = await loadReadingLogs(user.uid)
+      setReadingLogs(logs)
     } catch (error) {
       console.error("Error loading dashboard data:", error)
     } finally {
@@ -199,6 +205,11 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* Reading Streak */}
+        <div className="mb-8">
+          <ReadingStreak logs={readingLogs} loading={loading} />
+        </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

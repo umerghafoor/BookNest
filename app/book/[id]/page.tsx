@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Book, Note } from "@/lib/types"
+import { logProgressDelta } from "@/lib/reading-log"
 import { BookOpen, Edit, Plus, ExternalLink, MapPin, Calendar, User, Globe, Eye } from "lucide-react"
 import Link from "next/link"
 import React from "react"
@@ -103,11 +104,16 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
 
     try {
       const pagesRead = updatedProgress.pagesRead ? Number.parseInt(updatedProgress.pagesRead) : 0
+      const previousPagesRead = book.pagesRead ?? 0
 
       await updateDoc(doc(db, "books", book.id), {
         pagesRead,
         updatedAt: serverTimestamp(),
       })
+
+      if (user) {
+        await logProgressDelta(user.uid, previousPagesRead, pagesRead)
+      }
 
       setBook((prev) => (prev ? { ...prev, pagesRead } : null))
 

@@ -27,6 +27,19 @@ export interface Book {
   updatedAt: Date
 }
 
+/**
+ * A single day's reading activity for a user. One entry per (user, date),
+ * accumulating the pages read across all books that day. Drives the reading
+ * streak counters and the dashboard activity graphs.
+ */
+export interface ReadingLog {
+  id?: string
+  userId: string
+  date: string // YYYY-MM-DD in the user's local timezone
+  pages: number
+  updatedAt: Date
+}
+
 export interface Note {
   id: string
   content: string
