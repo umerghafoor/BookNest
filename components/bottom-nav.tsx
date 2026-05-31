@@ -29,25 +29,28 @@ export function BottomNav() {
 
   return (
     <>
-      {/* Spacer reserves layout height so fixed bar never overlaps page content
-          (mobile only, and only while signed in). */}
+      {/* Spacer reserves layout height so the floating bar never overlaps page
+          content (mobile only, and only while signed in). Accounts for the bar
+          height plus its bottom gap and the safe-area inset. */}
       <div
         className="md:hidden"
-        style={{ height: "calc(4rem + env(safe-area-inset-bottom))" }}
+        style={{ height: "calc(5.25rem + env(safe-area-inset-bottom))" }}
         aria-hidden
       />
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background md:hidden"
+        className="fixed inset-x-0 z-50 mx-auto max-w-md rounded-[1.75rem] border border-border/60 bg-background/95 px-2 shadow-xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 md:hidden"
         style={{
-          paddingBottom: "env(safe-area-inset-bottom)",
+          left: "max(1rem, env(safe-area-inset-left))",
+          right: "max(1rem, env(safe-area-inset-right))",
+          bottom: "calc(0.75rem + env(safe-area-inset-bottom))",
           // Promote to its own GPU layer so mobile pull-to-refresh / scroll
           // bounce can't repaint or displace the pinned bar.
           transform: "translateZ(0)",
           willChange: "transform",
         }}
       >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
+      <ul className="flex items-stretch justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = pathname === tab.href
@@ -72,7 +75,7 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                className={`flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >

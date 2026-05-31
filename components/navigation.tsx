@@ -35,7 +35,7 @@ export function Navigation({ title = "BookNest" }: NavigationProps) {
   ]
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-border/60 bg-primary-container/40 text-on-primary-container backdrop-blur-xl supports-[backdrop-filter]:bg-primary-container/30 md:bg-background/80 md:text-foreground md:supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-40 border-b border-primary/20 bg-primary-container text-on-primary-container backdrop-blur-xl supports-[backdrop-filter]:bg-primary-container/85 md:border-border/60 md:bg-background/80 md:text-foreground md:supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-8">
