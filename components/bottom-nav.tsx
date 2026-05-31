@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { useAuth } from "@/components/auth-provider"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BarChart3, Library, Plus, Globe, User } from "lucide-react"
+import { QuickProgressDialog } from "@/components/quick-progress-dialog"
 
 const tabs = [
   { href: "/dashboard", label: "Home", icon: BarChart3 },
@@ -21,6 +23,7 @@ const tabs = [
 export function BottomNav() {
   const { user } = useAuth()
   const pathname = usePathname()
+  const [quickOpen, setQuickOpen] = useState(false)
 
   if (!user) return null
 
@@ -35,8 +38,14 @@ export function BottomNav() {
       />
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background md:hidden"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          // Promote to its own GPU layer so mobile pull-to-refresh / scroll
+          // bounce can't repaint or displace the pinned bar.
+          transform: "translateZ(0)",
+          willChange: "transform",
+        }}
       >
       <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
         {tabs.map((tab) => {
@@ -46,13 +55,14 @@ export function BottomNav() {
           if (tab.primary) {
             return (
               <li key={tab.href} className="flex items-end">
-                <Link
-                  href={tab.href}
-                  aria-label={tab.label}
+                <button
+                  type="button"
+                  onClick={() => setQuickOpen(true)}
+                  aria-label="Log reading progress"
                   className="m3-state-layer -mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 ease-emphasized active:scale-95"
                 >
                   <Icon className="h-6 w-6" />
-                </Link>
+                </button>
               </li>
             )
           }
@@ -80,6 +90,8 @@ export function BottomNav() {
         })}
       </ul>
       </nav>
+
+      <QuickProgressDialog open={quickOpen} onOpenChange={setQuickOpen} />
     </>
   )
 }

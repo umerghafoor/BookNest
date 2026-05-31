@@ -139,6 +139,11 @@
   *::after {
     border-color: transparent !important;
   }
+  html {
+    /* Stop the page's pull-to-refresh / scroll-bounce from displacing the
+       fixed bottom tab bar on mobile. */
+    overscroll-behavior-y: none;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
