@@ -289,26 +289,26 @@ export default function DashboardPage() {
                 <CardDescription>Manage your reading collection</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Link href="/add-book">
-                  <Button className="w-full justify-start btn-primary">
+                <Link href="/add-book" className="block">
+                  <Button className="w-full justify-start">
                     <Plus className="h-4 w-4 mr-2" />
                     Add New Book
                   </Button>
                 </Link>
-                <Link href="/library">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                <Link href="/library" className="block">
+                  <Button variant="outline" className="w-full justify-start">
                     <BookOpen className="h-4 w-4 mr-2" />
                     Browse Library
                   </Button>
                 </Link>
-                <Link href="/bulk-edit">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                <Link href="/bulk-edit" className="block">
+                  <Button variant="outline" className="w-full justify-start">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Bulk Edit Books
                   </Button>
                 </Link>
-                <Link href="/stats">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                <Link href="/stats" className="block">
+                  <Button variant="outline" className="w-full justify-start">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     View Statistics
                   </Button>
