@@ -14,6 +14,7 @@ import { collection, query, where, getDocs, orderBy, limit } from "firebase/fire
 import { db } from "@/lib/firebase"
 import type { Book, ReadingLog } from "@/lib/types"
 import { loadReadingLogs } from "@/lib/reading-log"
+import { Fab } from "@/components/fab"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 
@@ -121,11 +122,11 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container">
-      <Navigation />
+      <Navigation title="Dashboard" />
 
       <div className="content-container">
-        {/* Header with Quick Search */}
-        <div className="mb-8">
+        {/* Header with Quick Search — desktop only; mobile uses the top app bar */}
+        <div className="mb-8 hidden md:block">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div className="page-header">
               <h1 className="page-title">Welcome back, {user.displayName || user.email?.split("@")[0] || "Reader"}!</h1>
@@ -154,9 +155,40 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Compact KPI row — mobile only */}
+        <div className="mb-6 grid grid-cols-4 gap-2 md:hidden">
+          {(loading
+            ? [null, null, null, null]
+            : [
+                { label: "Books", value: stats.totalBooks, href: "/library" },
+                { label: "Reading", value: stats.currentlyReading, href: "/library?status=reading" },
+                { label: "Read", value: stats.booksRead, href: "/library?status=read" },
+                { label: "Pages", value: stats.totalPages, href: "/stats" },
+              ]
+          ).map((kpi, i) =>
+            kpi ? (
+              <Link
+                key={kpi.label}
+                href={kpi.href}
+                className="flex flex-col items-center justify-center rounded-[var(--radius-md)] bg-card border border-border/60 px-1 py-3 text-center"
+              >
+                <span className="text-lg font-bold leading-none text-foreground">
+                  {kpi.value.toLocaleString()}
+                </span>
+                <span className="mt-1 text-[11px] text-muted-foreground">{kpi.label}</span>
+              </Link>
+            ) : (
+              <div
+                key={i}
+                className="h-16 animate-pulse rounded-[var(--radius-md)] bg-muted"
+              />
+            ),
+          )}
+        </div>
+
+        {/* Stats Grid — desktop */}
         {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="hidden md:grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="stat-card animate-pulse">
                 <div className="h-4 bg-muted rounded w-20 mb-4"></div>
@@ -166,7 +198,7 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="hidden md:grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Link href="/library">
               <div className="stat-card stat-card-blue transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
@@ -299,8 +331,8 @@ export default function DashboardPage() {
 
           {/* Quick Actions & Recent Activity */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="card-clean">
+            {/* Quick Actions — desktop only; mobile uses the floating action button */}
+            <Card className="card-clean hidden md:block">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
                   <Users className="h-5 w-5 text-primary mr-2" />
@@ -386,6 +418,17 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile floating quick actions */}
+      <Fab
+        label="Quick actions"
+        actions={[
+          { label: "Add Book", icon: Plus, href: "/add-book" },
+          { label: "Browse Library", icon: BookOpen, href: "/library" },
+          { label: "Bulk Edit", icon: TrendingUp, href: "/bulk-edit" },
+          { label: "Statistics", icon: Target, href: "/stats" },
+        ]}
+      />
     </div>
   )
 }

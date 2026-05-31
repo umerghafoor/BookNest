@@ -63,6 +63,7 @@ import { db, isFirebaseConfigured } from "@/lib/firebase"
 import { loadUserBooks } from "@/lib/data"
 import { mockFirestore } from "@/lib/mock-data"
 import { useToast } from "@/hooks/use-toast"
+import { Fab } from "@/components/fab"
 import type { Book } from "@/lib/types"
 import "@/styles/components.css"
 
@@ -114,6 +115,7 @@ export default function LibraryPage() {
   const [editFormData, setEditFormData] = useState<Partial<Book>>({})
   const [saving, setSaving] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -370,27 +372,28 @@ export default function LibraryPage() {
 
   return (
     <div className="page-container">
-      <Navigation />
+      <Navigation title="Library" />
 
       <div className="content-container">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-6">
           <div className="page-header">
-            <h1 className="page-title">My Library</h1>
+            <h1 className="page-title hidden sm:block">My Library</h1>
             <p className="page-description">
               {filteredBooks.length} of {books.length} books • Page {currentPage} of {totalPages || 1}
               {selectedBooks.size > 0 && ` • ${selectedBooks.size} selected`}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Link href="/bulk-edit" className="flex-1 sm:flex-none">
-              <Button variant="outline" className="w-full">
-                <Edit className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Bulk Edit</span>
+          {/* Header actions — desktop only; mobile uses the floating action button */}
+          <div className="hidden sm:flex gap-2">
+            <Link href="/bulk-edit">
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Bulk Edit
               </Button>
             </Link>
-            <Link href="/add-book" className="flex-1 sm:flex-none">
-              <Button className="btn-primary w-full">
+            <Link href="/add-book">
+              <Button className="btn-primary">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Book
               </Button>
@@ -398,37 +401,51 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* Advanced Search and Filters */}
-        <Card className="mb-6">
-          <CardHeader className="pb-4 flex flex-row items-center justify-between">
+        {/* Advanced Search and Filters — bare on mobile, carded on desktop */}
+        <Card className="mb-6 border-0 bg-transparent md:border md:bg-card">
+          <CardHeader className="hidden md:flex pb-4 flex-row items-center justify-between">
             <CardTitle className="text-lg">Search & Filter</CardTitle>
             <span className="text-sm text-muted-foreground">
               {filteredBooks.length} of {books.length} books
             </span>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by title, author, genre, tags, or ISBN..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-11 rounded-full"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+          <CardContent className="space-y-4 p-0 md:p-6 md:pt-0">
+            {/* Search Bar (single bar; on mobile a Filters toggle sits beside it) */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search your library..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-11 rounded-full"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Clear search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 rounded-full md:hidden"
+                aria-label="Toggle filters"
+                aria-expanded={showFilters}
+                onClick={() => setShowFilters((v) => !v)}
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Filters Row */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            {/* Filters Row — always shown on desktop; toggled on mobile */}
+            <div
+              className={`${showFilters ? "flex" : "hidden"} md:flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center`}
+            >
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-48">
                   <Filter className="h-4 w-4 mr-2" />
@@ -1163,6 +1180,15 @@ export default function LibraryPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+
+      {/* Mobile floating actions */}
+      <Fab
+        label="Library actions"
+        actions={[
+          { label: "Add Book", icon: Plus, href: "/add-book" },
+          { label: "Bulk Edit", icon: Edit, href: "/bulk-edit" },
+        ]}
+      />
     </div>
   )
 }
