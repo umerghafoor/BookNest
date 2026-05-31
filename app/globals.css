@@ -132,6 +132,13 @@
   * {
     @apply border-border;
   }
+  /* Borders removed app-wide: neutralize all border + ring-offset colors.
+     Focus rings use box-shadow/outline via --ring, so they are unaffected. */
+  *,
+  *::before,
+  *::after {
+    border-color: transparent !important;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
