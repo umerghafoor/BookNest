@@ -475,12 +475,12 @@ export function CSVUploader({ onUploadComplete }: CSVUploaderProps) {
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+            <div className="bg-primary-container/40 p-4 rounded-[var(--radius-md)]">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-900 dark:text-blue-100">CSV Format Tips:</p>
-                  <ul className="mt-1 text-blue-800 dark:text-blue-200 space-y-1">
+                  <p className="font-medium text-foreground">CSV Format Tips:</p>
+                  <ul className="mt-1 text-muted-foreground space-y-1">
                     <li>• Separate multiple authors with semicolons (;)</li>
                     <li>• Separate multiple tags with semicolons (;)</li>
                     <li>• Use formats: physical, ebook, audiobook</li>

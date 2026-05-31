@@ -128,17 +128,17 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
   const getStatusColor = (status: string) => {
     switch (status) {
       case "reading":
-        return "bg-blue-100 text-blue-800"
+        return "bg-primary-container text-on-primary-container"
       case "read":
-        return "bg-green-100 text-green-800"
+        return "bg-[hsl(150_55%_88%)] text-[hsl(150_70%_22%)] dark:bg-[hsl(150_30%_24%)] dark:text-[hsl(150_60%_82%)]"
       case "will-read":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-tertiary-container text-on-tertiary-container"
       case "on-hold":
-        return "bg-orange-100 text-orange-800"
+        return "bg-[hsl(38_92%_88%)] text-[hsl(30_80%_28%)] dark:bg-[hsl(38_40%_24%)] dark:text-[hsl(38_90%_78%)]"
       case "abandoned":
-        return "bg-red-100 text-red-800"
+        return "bg-destructive/15 text-destructive"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 

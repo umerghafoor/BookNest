@@ -513,7 +513,7 @@ export default function BulkEditPage() {
             <Button
               onClick={saveChanges}
               disabled={!hasUnsavedChanges || saving}
-              className={`${hasUnsavedChanges ? "bg-orange-600 hover:bg-orange-700" : "btn-primary"}`}
+              className={`${hasUnsavedChanges ? "bg-tertiary hover:bg-tertiary/90" : "btn-primary"}`}
               title="Save (Ctrl+S)"
             >
               <Save className="h-4 w-4 mr-2" />
@@ -523,14 +523,14 @@ export default function BulkEditPage() {
         </div>
 
         {/* Keyboard Shortcuts Help */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+        <Card className="mb-6 bg-primary-container/40 border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-blue-900 dark:text-blue-100 flex items-center gap-2">
+            <CardTitle className="text-sm text-foreground flex items-center gap-2">
               ⌨️ Keyboard Shortcuts
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-blue-800 dark:text-blue-200">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-muted-foreground">
               <div>
                 <strong>Navigate:</strong> Arrow keys, Tab
               </div>
@@ -582,16 +582,16 @@ export default function BulkEditPage() {
         {loading ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
               <p>Loading books...</p>
             </CardContent>
           </Card>
         ) : (
-          <Card className="shadow-lg">
+          <Card>
             <CardContent className="p-0">
               <div className="overflow-hidden border rounded-lg">
                 <table ref={tableRef} className="w-full border-collapse bg-card">
-                  <thead className="bg-gradient-to-r from-muted to-muted sticky top-0 z-10 shadow-sm">
+                  <thead className="bg-gradient-to-r from-muted to-muted sticky top-0 z-10">
                     <tr>
                       <th className="p-3 text-left border-r border-border w-12 bg-muted">
                         <Checkbox
@@ -615,7 +615,7 @@ export default function BulkEditPage() {
                       <tr
                         key={book.id}
                         className={`border-b border-border hover:bg-accent transition-colors ${
-                          selectedBooks.has(book.id) ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                          selectedBooks.has(book.id) ? "bg-primary-container/40" : ""
                         } ${rowIndex % 2 === 0 ? "bg-muted/30" : ""}`}
                       >
                         <td className="p-3 border-r border-border bg-muted/50">
@@ -629,7 +629,7 @@ export default function BulkEditPage() {
                             key={`${book.id}-${column.key}`}
                             className={`border-r border-border relative transition-all duration-150 ${
                               isCellSelected(book.id, column.key)
-                                ? "ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-900/30 shadow-inner"
+                                ? "ring-2 ring-primary ring-inset bg-primary-container"
                                 : "hover:bg-accent/30"
                             }`}
                             style={{ width: column.width }}
@@ -659,7 +659,7 @@ export default function BulkEditPage() {
                                     }}
                                     open={true}
                                   >
-                                    <SelectTrigger className="h-8 text-xs border-blue-300 shadow-sm">
+                                    <SelectTrigger className="h-8 text-xs border-input">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -680,7 +680,7 @@ export default function BulkEditPage() {
                                     }}
                                     open={true}
                                   >
-                                    <SelectTrigger className="h-8 text-xs border-blue-300 shadow-sm">
+                                    <SelectTrigger className="h-8 text-xs border-input">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -718,7 +718,7 @@ export default function BulkEditPage() {
                                         cancelEditing()
                                       }
                                     }}
-                                    className="h-8 text-xs border-blue-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="h-8 text-xs border-input focus:ring-2 focus:ring-ring focus:border-primary"
                                     type={column.type === "number" ? "number" : "text"}
                                   />
                                 )}
@@ -729,7 +729,7 @@ export default function BulkEditPage() {
                                   hasUnsavedChanges &&
                                   books.find((b) => b.id === book.id)?.[column.key as keyof Book] !==
                                     paginatedBooks.find((b) => b.id === book.id)?.[column.key as keyof Book]
-                                    ? "bg-orange-100 dark:bg-orange-900/30 border-l-2 border-orange-400"
+                                    ? "bg-tertiary-container/50 border-l-2 border-tertiary"
                                     : ""
                                 }`}
                               >
@@ -863,11 +863,11 @@ export default function BulkEditPage() {
 
         {/* Status Bar */}
         {hasUnsavedChanges && (
-          <div className="fixed bottom-4 right-4 bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg p-3 shadow-lg">
-            <div className="flex items-center gap-2 text-orange-800 dark:text-orange-200">
-              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+          <div className="fixed bottom-4 right-4 bg-tertiary-container text-on-tertiary-container border border-border rounded-[var(--radius-md)] p-3">
+            <div className="flex items-center gap-2 text-on-tertiary-container">
+              <div className="w-2 h-2 bg-tertiary rounded-full animate-pulse"></div>
               <span className="text-sm font-medium">Unsaved changes</span>
-              <Button size="sm" onClick={saveChanges} className="ml-2 bg-orange-600 hover:bg-orange-700 text-white">
+              <Button size="sm" onClick={saveChanges} className="ml-2 bg-tertiary hover:bg-tertiary/90 text-white">
                 Save Now
               </Button>
             </div>

@@ -143,23 +143,25 @@
 }
 
 /* ============================================================================
-   Material 3 elevation tiers (tonal + shadow)
+   Postmodern-expressive "elevation": NO shadows. Depth is expressed with bold
+   outlines and hard offset edges (color blocking) instead of soft blur.
+   The .m3-elevation-* names are kept so every existing usage flattens at once.
    ========================================================================== */
 @layer components {
+  /* Restrained: flat with a light hairline border, no shadow. */
   .m3-elevation-1 {
-    box-shadow:
-      0 1px 2px 0 hsl(270 10% 13% / 0.10),
-      0 1px 3px 1px hsl(270 10% 13% / 0.07);
+    box-shadow: none;
+    border: 1px solid hsl(var(--border));
   }
+  /* Slightly more present — still flat, just a firmer outline. */
   .m3-elevation-2 {
-    box-shadow:
-      0 1px 2px 0 hsl(270 10% 13% / 0.12),
-      0 2px 6px 2px hsl(270 10% 13% / 0.08);
+    box-shadow: none;
+    border: 1px solid hsl(var(--border));
   }
+  /* Reserved emphasis only (dialogs, hero): a single crisp blur-free offset. */
   .m3-elevation-3 {
-    box-shadow:
-      0 4px 8px 3px hsl(270 10% 13% / 0.10),
-      0 1px 3px 0 hsl(270 10% 13% / 0.12);
+    box-shadow: 3px 3px 0 0 hsl(var(--primary) / 0.9);
+    border: 1px solid hsl(var(--foreground) / 0.85);
   }
 
   /* M3 state-layer: subtle tonal hover/press overlay on interactive surfaces */
@@ -202,7 +204,7 @@
    now mapped onto Material 3 roles).
    ========================================================================== */
 .card-elevated {
-  @apply bg-card border border-border rounded-[var(--radius-lg)] m3-elevation-1 hover:m3-elevation-2 transition-shadow duration-200;
+  @apply bg-card border border-border rounded-[var(--radius-lg)] hover:border-foreground/40 transition-colors duration-200;
 }
 
 .btn-primary {
@@ -214,7 +216,7 @@
 }
 
 .stat-card {
-  @apply bg-card border border-border rounded-[var(--radius-lg)] p-6 m3-elevation-1 hover:m3-elevation-2 transition-all duration-300;
+  @apply bg-card border border-border rounded-[var(--radius-lg)] p-6 hover:border-foreground/40 transition-colors duration-300;
 }
 
 .stat-card-blue {

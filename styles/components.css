@@ -25,13 +25,13 @@
   @apply text-muted-foreground;
 }
 
-/* Cards */
+/* Cards — flat, hairline border, no shadow */
 .card-clean {
-  @apply bg-card border border-border/60 rounded-[var(--radius-lg)] m3-elevation-1;
+  @apply bg-card border border-border rounded-[var(--radius-lg)];
 }
 
 .book-card {
-  @apply card-clean transition-all duration-200 ease-emphasized cursor-pointer hover:m3-elevation-2 hover:border-primary/40;
+  @apply card-clean transition-colors duration-200 ease-emphasized cursor-pointer hover:border-foreground/40;
 }
 
 .book-card-grid {
@@ -95,7 +95,7 @@
 
 /* Stat Cards */
 .stat-card {
-  @apply bg-card border border-border/60 rounded-[var(--radius-lg)] p-6 m3-elevation-1 transition-all duration-300 ease-emphasized;
+  @apply bg-card border border-border rounded-[var(--radius-lg)] p-6 transition-colors duration-300 ease-emphasized;
 }
 
 .stat-card-blue {
@@ -127,7 +127,7 @@
 }
 
 .view-toggle-btn-active {
-  @apply bg-primary text-primary-foreground m3-elevation-1;
+  @apply bg-primary text-primary-foreground;
 }
 
 .view-toggle-btn-inactive {
@@ -159,7 +159,7 @@
 }
 
 .search-results {
-  @apply absolute top-full left-0 right-0 bg-popover text-popover-foreground border border-border rounded-[var(--radius-md)] m3-elevation-2 mt-1 z-50 max-h-64 overflow-y-auto;
+  @apply absolute top-full left-0 right-0 bg-popover text-popover-foreground border border-border rounded-[var(--radius-md)] mt-1 z-50 max-h-64 overflow-y-auto;
 }
 
 .search-result-item {

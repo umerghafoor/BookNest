@@ -731,7 +731,7 @@ export default function LibraryPage() {
                       <tr
                         key={book.id}
                         className={`border-b hover:bg-accent/60 ${
-                          selectedBooks.has(book.id) ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                          selectedBooks.has(book.id) ? "bg-primary-container/40" : ""
                         }`}
                       >
                         <td className="p-3">

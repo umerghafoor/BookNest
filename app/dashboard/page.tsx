@@ -153,7 +153,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Link href="/library">
-              <div className="stat-card stat-card-blue hover:shadow-lg transition-all cursor-pointer">
+              <div className="stat-card stat-card-blue transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Total Books</h3>
                   <BookOpen className="h-5 w-5 text-primary" />
@@ -164,7 +164,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link href="/library?status=reading">
-              <div className="stat-card stat-card-emerald hover:shadow-lg transition-all cursor-pointer">
+              <div className="stat-card stat-card-emerald transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Currently Reading</h3>
                   <Clock className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -175,7 +175,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link href="/library?status=read">
-              <div className="stat-card stat-card-violet hover:shadow-lg transition-all cursor-pointer">
+              <div className="stat-card stat-card-violet transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Books Read</h3>
                   <Target className="h-5 w-5 text-violet-600 dark:text-violet-400" />
@@ -186,7 +186,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link href="/stats">
-              <div className="stat-card stat-card-slate hover:shadow-lg transition-all cursor-pointer">
+              <div className="stat-card stat-card-slate transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Pages Read</h3>
                   <TrendingUp className="h-5 w-5 text-muted-foreground" />
