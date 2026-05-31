@@ -1,7 +1,7 @@
-import { initializeApp } from "firebase/app"
-import { getAuth, GoogleAuthProvider } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
-import { getStorage } from "firebase/storage"
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
+import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth"
+import { getFirestore, type Firestore } from "firebase/firestore"
+import { getStorage, type FirebaseStorage } from "firebase/storage"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,23 +11,39 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
+/**
+ * Firebase is only usable when the project has been configured via env vars.
+ * When it isn't (e.g. local preview / demo), we skip initialization so the app
+ * can still boot and fall back to the in-memory mock data layer.
+ */
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId,
+)
 
-// Initialize Firebase services
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
+let app: FirebaseApp | null = null
+let authInstance: Auth | null = null
+let dbInstance: Firestore | null = null
+let storageInstance: FirebaseStorage | null = null
+let googleProviderInstance: GoogleAuthProvider | null = null
 
-// Google Auth Provider
-export const googleProvider = new GoogleAuthProvider()
-googleProvider.setCustomParameters({
-  prompt: "select_account",
-})
+if (isFirebaseConfigured) {
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
+  authInstance = getAuth(app)
+  dbInstance = getFirestore(app)
+  storageInstance = getStorage(app)
+  googleProviderInstance = new GoogleAuthProvider()
+  googleProviderInstance.setCustomParameters({ prompt: "select_account" })
+} else if (typeof window !== "undefined") {
+  console.warn(
+    "[BookNest] Firebase env vars are not set — running in demo mode with mock data.",
+  )
+}
 
-console.log("Firebase initialized with config:", {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-})
+// Existing code imports these eagerly. They are non-null when Firebase is
+// configured; in demo mode callers gate on `isFirebaseConfigured` first.
+export const auth = authInstance as Auth
+export const db = dbInstance as Firestore
+export const storage = storageInstance as FirebaseStorage
+export const googleProvider = googleProviderInstance as GoogleAuthProvider

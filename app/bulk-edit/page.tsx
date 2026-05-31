@@ -552,7 +552,7 @@ export default function BulkEditPage() {
           <CardContent className="p-4">
             <div className="flex gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search books..."
                   value={searchTerm}
@@ -590,10 +590,10 @@ export default function BulkEditPage() {
           <Card className="shadow-lg">
             <CardContent className="p-0">
               <div className="overflow-hidden border rounded-lg">
-                <table ref={tableRef} className="w-full border-collapse bg-white dark:bg-slate-800">
-                  <thead className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 sticky top-0 z-10 shadow-sm">
+                <table ref={tableRef} className="w-full border-collapse bg-card">
+                  <thead className="bg-gradient-to-r from-muted to-muted sticky top-0 z-10 shadow-sm">
                     <tr>
-                      <th className="p-3 text-left border-r border-slate-200 dark:border-slate-600 w-12 bg-slate-100 dark:bg-slate-700">
+                      <th className="p-3 text-left border-r border-border w-12 bg-muted">
                         <Checkbox
                           checked={selectedBooks.size === paginatedBooks.length && paginatedBooks.length > 0}
                           onCheckedChange={toggleSelectAll}
@@ -602,7 +602,7 @@ export default function BulkEditPage() {
                       {COLUMNS.map((column) => (
                         <th
                           key={column.key}
-                          className="p-3 text-left border-r border-slate-200 dark:border-slate-600 font-semibold text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                          className="p-3 text-left border-r border-border font-semibold text-sm bg-muted text-foreground"
                           style={{ width: column.width }}
                         >
                           {column.label}
@@ -614,11 +614,11 @@ export default function BulkEditPage() {
                     {paginatedBooks.map((book, rowIndex) => (
                       <tr
                         key={book.id}
-                        className={`border-b border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
+                        className={`border-b border-border hover:bg-accent transition-colors ${
                           selectedBooks.has(book.id) ? "bg-blue-50 dark:bg-blue-900/20" : ""
-                        } ${rowIndex % 2 === 0 ? "bg-slate-25 dark:bg-slate-800/30" : ""}`}
+                        } ${rowIndex % 2 === 0 ? "bg-muted/30" : ""}`}
                       >
-                        <td className="p-3 border-r border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50">
+                        <td className="p-3 border-r border-border bg-muted/50">
                           <Checkbox
                             checked={selectedBooks.has(book.id)}
                             onCheckedChange={() => toggleBookSelection(book.id)}
@@ -627,10 +627,10 @@ export default function BulkEditPage() {
                         {COLUMNS.map((column) => (
                           <td
                             key={`${book.id}-${column.key}`}
-                            className={`border-r border-slate-200 dark:border-slate-600 relative transition-all duration-150 ${
+                            className={`border-r border-border relative transition-all duration-150 ${
                               isCellSelected(book.id, column.key)
                                 ? "ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-900/30 shadow-inner"
-                                : "hover:bg-slate-100 dark:hover:bg-slate-700/30"
+                                : "hover:bg-accent/30"
                             }`}
                             style={{ width: column.width }}
                             onClick={() =>
@@ -702,7 +702,7 @@ export default function BulkEditPage() {
                                         cancelEditing()
                                       }
                                     }}
-                                    className="w-full h-20 text-xs border border-blue-300 rounded px-2 py-1 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                                    className="w-full h-20 text-xs border border-input rounded px-2 py-1 resize-none focus:ring-2 focus:ring-ring focus:border-primary bg-card"
                                     style={{ minHeight: "60px" }}
                                   />
                                 ) : (
@@ -773,7 +773,7 @@ export default function BulkEditPage() {
                                   <div className="w-full overflow-hidden">
                                     <div className="truncate" title={getCellValue(book, column.key) || "Unknown"}>
                                       {getCellValue(book, column.key) || (
-                                        <span className="text-slate-400 italic">Unknown</span>
+                                        <span className="text-muted-foreground italic">Unknown</span>
                                       )}
                                     </div>
                                   </div>
@@ -796,7 +796,7 @@ export default function BulkEditPage() {
           <Card className="mt-6">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                   {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
                 </div>
@@ -854,9 +854,9 @@ export default function BulkEditPage() {
         {filteredBooks.length === 0 && !loading && (
           <Card>
             <CardContent className="py-12 text-center">
-              <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No books found</h3>
-              <p className="text-slate-500 mb-4">Try adjusting your search or filter criteria</p>
+              <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
             </CardContent>
           </Card>
         )}

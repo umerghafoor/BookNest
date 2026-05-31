@@ -246,7 +246,7 @@ export default function DiscoverPage() {
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search books, authors, genres, or tags..."
               value={searchTerm}
@@ -301,9 +301,9 @@ export default function DiscoverPage() {
               <Card key={i} className="card-clean animate-pulse">
                 <CardContent className="p-4">
                   <div className="space-y-3">
-                    <div className="w-full h-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-                    <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                    <div className="w-full h-32 bg-muted rounded"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -311,9 +311,9 @@ export default function DiscoverPage() {
           </div>
         ) : filteredBooks.length === 0 ? (
           <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">No public books found</h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-4">Try adjusting your search or filter criteria</p>
+            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-foreground">No public books found</h3>
+            <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
           </div>
         ) : (
           <div className="book-card-grid">
@@ -322,7 +322,7 @@ export default function DiscoverPage() {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     {/* Book Cover */}
-                    <div className="w-full h-32 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center">
+                    <div className="w-full h-32 bg-primary-container rounded flex items-center justify-center">
                       {book.coverImage ? (
                         <img
                           src={book.coverImage || "/placeholder.svg"}
@@ -330,20 +330,20 @@ export default function DiscoverPage() {
                           className="w-full h-full object-cover rounded"
                         />
                       ) : (
-                        <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        <BookOpen className="h-8 w-8 text-primary" />
                       )}
                     </div>
 
                     {/* Book Info */}
                     <div className="space-y-2">
-                      <h3 className="font-semibold text-sm line-clamp-2 text-slate-900 dark:text-white">
+                      <h3 className="font-semibold text-sm line-clamp-2 text-foreground">
                         {book.title}
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                      <p className="text-xs text-muted-foreground line-clamp-1">
                         by {book.authors.join(", ")}
                       </p>
 
-                      {book.genre && <p className="text-xs text-slate-600 dark:text-slate-300">{book.genre}</p>}
+                      {book.genre && <p className="text-xs text-muted-foreground">{book.genre}</p>}
 
                       {/* Status and Format */}
                       <div className="flex items-center gap-2 flex-wrap">
@@ -377,7 +377,7 @@ export default function DiscoverPage() {
                       )}
 
                       {/* User Info and Actions */}
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-border">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarImage src={book.userPhotoURL || "/placeholder.svg"} />
@@ -385,7 +385,7 @@ export default function DiscoverPage() {
                               {book.userEmail ? getUserInitials(book.userEmail) : <User className="h-3 w-3" />}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          <span className="text-xs text-muted-foreground truncate">
                             {book.userName || book.userEmail?.split("@")[0] || "Anonymous"}
                           </span>
                         </div>
@@ -405,8 +405,8 @@ export default function DiscoverPage() {
                             </Button>
                           )}
                           <div className="flex items-center gap-1">
-                            <Eye className="h-3 w-3 text-slate-400" />
-                            <span className="text-xs text-slate-400">Public</span>
+                            <Eye className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Public</span>
                           </div>
                         </div>
                       </div>
@@ -423,7 +423,7 @@ export default function DiscoverPage() {
           <Card className="mt-6">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                   {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
                 </div>
@@ -498,7 +498,7 @@ export default function DiscoverPage() {
                   rows={4}
                 />
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 The owner will receive your contact information along with this message.
               </div>
             </div>

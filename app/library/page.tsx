@@ -58,8 +58,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { doc, deleteDoc, updateDoc } from "firebase/firestore"
+import { db, isFirebaseConfigured } from "@/lib/firebase"
+import { loadUserBooks } from "@/lib/data"
+import { mockFirestore } from "@/lib/mock-data"
 import { useToast } from "@/hooks/use-toast"
 import type { Book } from "@/lib/types"
 import "@/styles/components.css"
@@ -77,6 +79,18 @@ type SortField =
 type SortDirection = "asc" | "desc"
 
 const ITEMS_PER_PAGE = 20
+
+// Material 3 "input chip" used to surface and dismiss an active filter.
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-primary-container px-3 py-1 text-xs font-medium text-on-primary-container capitalize">
+      {label}
+      <button onClick={onClear} aria-label={`Remove ${label} filter`} className="hover:opacity-70">
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
 
 export default function LibraryPage() {
   const { user } = useAuth()
@@ -119,15 +133,7 @@ export default function LibraryPage() {
     if (!user) return
 
     try {
-      const booksRef = collection(db, "books")
-      const userBooksQuery = query(booksRef, where("userId", "==", user.uid))
-      const snapshot = await getDocs(userBooksQuery)
-
-      const booksData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Book[]
-
+      const booksData = await loadUserBooks(user.uid)
       setBooks(booksData)
     } catch (error) {
       console.error("Error loading books:", error)
@@ -245,7 +251,11 @@ export default function LibraryPage() {
 
   const handleDeleteBook = async (book: Book) => {
     try {
-      await deleteDoc(doc(db, "books", book.id))
+      if (isFirebaseConfigured) {
+        await deleteDoc(doc(db, "books", book.id))
+      } else {
+        await mockFirestore.deleteBook(book.id)
+      }
       setBooks(books.filter((b) => b.id !== book.id))
       toast({
         title: "Book deleted",
@@ -286,10 +296,14 @@ export default function LibraryPage() {
 
     setSaving(true)
     try {
-      await updateDoc(doc(db, "books", editingBook.id), {
-        ...editFormData,
-        updatedAt: new Date(),
-      })
+      if (isFirebaseConfigured) {
+        await updateDoc(doc(db, "books", editingBook.id), {
+          ...editFormData,
+          updatedAt: new Date(),
+        })
+      } else {
+        await mockFirestore.updateBook(editingBook.id, { ...editFormData })
+      }
 
       setBooks(books.map((b) => (b.id === editingBook.id ? { ...b, ...editFormData, updatedAt: new Date() } : b)))
       setEditDialogOpen(false)
@@ -386,23 +400,35 @@ export default function LibraryPage() {
 
         {/* Advanced Search and Filters */}
         <Card className="mb-6">
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Search & Filter</CardTitle>
+            <span className="text-sm text-muted-foreground">
+              {filteredBooks.length} of {books.length} books
+            </span>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by title, author, genre, tags, or ISBN..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-11 rounded-full"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             {/* Filters Row */}
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-48">
                   <Filter className="h-4 w-4 mr-2" />
@@ -461,6 +487,36 @@ export default function LibraryPage() {
                 </button>
               </div>
             </div>
+
+            {/* Active filter chips */}
+            {(statusFilter !== "all" || formatFilter !== "all" || genreFilter !== "all" || searchTerm) && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-xs font-medium text-muted-foreground">Active:</span>
+                {searchTerm && (
+                  <FilterChip label={`"${searchTerm}"`} onClear={() => setSearchTerm("")} />
+                )}
+                {statusFilter !== "all" && (
+                  <FilterChip label={`Status: ${statusFilter}`} onClear={() => setStatusFilter("all")} />
+                )}
+                {formatFilter !== "all" && (
+                  <FilterChip label={`Format: ${formatFilter}`} onClear={() => setFormatFilter("all")} />
+                )}
+                {genreFilter !== "all" && (
+                  <FilterChip label={`Genre: ${genreFilter}`} onClear={() => setGenreFilter("all")} />
+                )}
+                <button
+                  onClick={() => {
+                    setSearchTerm("")
+                    setStatusFilter("all")
+                    setFormatFilter("all")
+                    setGenreFilter("all")
+                  }}
+                  className="ml-1 text-xs font-medium text-primary hover:underline"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -468,17 +524,17 @@ export default function LibraryPage() {
         {loading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+              <div key={i} className="h-16 bg-muted rounded-[var(--radius-md)] animate-pulse"></div>
             ))}
           </div>
         ) : filteredBooks.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-foreground">
                 {books.length === 0 ? "No books yet" : "No books match your filters"}
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 {books.length === 0
                   ? "Start building your library by adding your first book"
                   : "Try adjusting your search or filter criteria"}
@@ -499,7 +555,7 @@ export default function LibraryPage() {
               <Card key={book.id} className="book-card group">
                 <CardContent className="p-4">
                   <div className="flex flex-col space-y-3">
-                    <div className="w-full h-32 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center">
+                    <div className="w-full h-32 bg-primary-container rounded flex items-center justify-center">
                       {book.coverImage ? (
                         <img
                           src={book.coverImage || "/placeholder.svg"}
@@ -507,15 +563,15 @@ export default function LibraryPage() {
                           className="w-full h-full object-cover rounded"
                         />
                       ) : (
-                        <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        <BookOpen className="h-8 w-8 text-primary" />
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <h3 className="font-semibold text-sm line-clamp-2 text-slate-900 dark:text-white">
+                      <h3 className="font-semibold text-sm line-clamp-2 text-foreground">
                         {book.title}
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                      <p className="text-xs text-muted-foreground line-clamp-1">
                         {book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
                       </p>
 
@@ -537,10 +593,10 @@ export default function LibraryPage() {
                       {book.status === "reading" && book.totalPages && book.pagesRead && (
                         <div className="space-y-1">
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500 dark:text-slate-400">
+                            <span className="text-muted-foreground">
                               {book.pagesRead} / {book.totalPages} pages
                             </span>
-                            <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
+                            <span className="text-primary">{getProgressPercentage(book)}%</span>
                           </div>
                           <div className="progress-bar">
                             <div className="progress-fill" style={{ width: `${getProgressPercentage(book)}%` }}></div>
@@ -608,7 +664,7 @@ export default function LibraryPage() {
                     <col className="w-[8%]" />
                     <col className="w-[14%]" />
                   </colgroup>
-                  <thead className="bg-slate-50 dark:bg-slate-800 border-b">
+                  <thead className="bg-muted/50 border-b">
                     <tr>
                       <th className="p-3 text-left">
                         <Checkbox
@@ -674,7 +730,7 @@ export default function LibraryPage() {
                     {paginatedBooks.map((book) => (
                       <tr
                         key={book.id}
-                        className={`border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                        className={`border-b hover:bg-accent/60 ${
                           selectedBooks.has(book.id) ? "bg-blue-50 dark:bg-blue-900/20" : ""
                         }`}
                       >
@@ -686,7 +742,7 @@ export default function LibraryPage() {
                         </td>
                         <td className="p-3">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-10 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-10 bg-primary-container rounded flex items-center justify-center flex-shrink-0">
                               {book.coverImage ? (
                                 <img
                                   src={book.coverImage || "/placeholder.svg"}
@@ -694,17 +750,17 @@ export default function LibraryPage() {
                                   className="w-full h-full object-cover rounded"
                                 />
                               ) : (
-                                <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <BookOpen className="h-4 w-4 text-primary" />
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
                               <Link href={`/book/${book.id}`}>
-                                <p className="font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate">
+                                <p className="font-medium text-foreground hover:text-primary cursor-pointer truncate">
                                   {book.title || "Untitled"}
                                 </p>
                               </Link>
                               {book.subtitle && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{book.subtitle}</p>
+                                <p className="text-xs text-muted-foreground truncate">{book.subtitle}</p>
                               )}
                               <div className="flex items-center gap-1 mt-1">
                                 {book.isPublic && (
@@ -722,12 +778,12 @@ export default function LibraryPage() {
                           </div>
                         </td>
                         <td className="p-3">
-                          <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                          <p className="text-sm text-muted-foreground truncate">
                             {book.authors && book.authors.length > 0 ? book.authors.join(", ") : "Unknown Author"}
                           </p>
                         </td>
                         <td className="p-3">
-                          <p className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                          <p className="text-sm text-muted-foreground truncate">
                             {book.genre || "Unknown"}
                           </p>
                         </td>
@@ -746,10 +802,10 @@ export default function LibraryPage() {
                           {book.status === "reading" && book.totalPages && book.pagesRead ? (
                             <div className="space-y-1">
                               <div className="flex justify-between text-xs">
-                                <span className="text-slate-500 dark:text-slate-400">
+                                <span className="text-muted-foreground">
                                   {book.pagesRead} / {book.totalPages}
                                 </span>
-                                <span className="text-blue-600 dark:text-blue-400">{getProgressPercentage(book)}%</span>
+                                <span className="text-primary">{getProgressPercentage(book)}%</span>
                               </div>
                               <div className="progress-bar">
                                 <div
@@ -759,7 +815,7 @@ export default function LibraryPage() {
                               </div>
                             </div>
                           ) : (
-                            <span className="text-slate-400 text-sm">—</span>
+                            <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </td>
                         <td className="p-3">
@@ -814,7 +870,7 @@ export default function LibraryPage() {
           <Card className="mt-6">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                   {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} of {filteredBooks.length} books
                 </div>

@@ -128,7 +128,7 @@ export function AuthForm() {
   return (
     <Card className="w-full max-w-md mx-auto card-clean">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl text-slate-900 dark:text-white">Join BookNest</CardTitle>
+        <CardTitle className="text-2xl font-display">Join BookNest</CardTitle>
         <CardDescription>Start organizing your reading journey</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -141,7 +141,7 @@ export function AuthForm() {
           type="button"
         >
           {googleLoading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-transparent mr-2"></div>
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent mr-2"></div>
           ) : (
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path

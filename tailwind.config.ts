@@ -25,8 +25,15 @@ const config: Config = {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				foreground: 'hsl(var(--primary-foreground))',
+  				container: 'hsl(var(--primary-container))'
   			},
+  			'on-primary-container': 'hsl(var(--on-primary-container))',
+  			tertiary: {
+  				DEFAULT: 'hsl(var(--tertiary))',
+  				container: 'hsl(var(--tertiary-container))'
+  			},
+  			'on-tertiary-container': 'hsl(var(--on-tertiary-container))',
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
   				foreground: 'hsl(var(--secondary-foreground))'
@@ -66,8 +73,19 @@ const config: Config = {
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			md: 'var(--radius-md)',
+  			sm: 'var(--radius-sm)',
+  			xs: 'var(--radius-xs)',
+  			xl: 'var(--radius-xl)'
+  		},
+  		fontFamily: {
+  			sans: ['var(--font-sans)', 'Roboto', 'system-ui', 'sans-serif'],
+  			display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif']
+  		},
+  		transitionTimingFunction: {
+  			// M3 expressive easing
+  			emphasized: 'cubic-bezier(0.2, 0, 0, 1)',
+  			'emphasized-decelerate': 'cubic-bezier(0.05, 0.7, 0.1, 1)'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -85,11 +103,16 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'fade-in-up': {
+  				from: { opacity: '0', transform: 'translateY(8px)' },
+  				to: { opacity: '1', transform: 'translateY(0)' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'fade-in-up': 'fade-in-up 0.4s cubic-bezier(0.05, 0.7, 0.1, 1)'
   		}
   	}
   },

@@ -122,7 +122,7 @@ export default function DashboardPage() {
               <CardContent className="p-4">
                 <form onSubmit={handleQuickSearch} className="flex gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Quick search your library..."
                       value={quickSearch}
@@ -144,9 +144,9 @@ export default function DashboardPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="stat-card animate-pulse">
-                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20 mb-4"></div>
-                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-16 mb-2"></div>
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                <div className="h-4 bg-muted rounded w-20 mb-4"></div>
+                <div className="h-8 bg-muted rounded w-16 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-24"></div>
               </div>
             ))}
           </div>
@@ -155,46 +155,46 @@ export default function DashboardPage() {
             <Link href="/library">
               <div className="stat-card stat-card-blue hover:shadow-lg transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Books</h3>
-                  <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-sm font-medium text-muted-foreground">Total Books</h3>
+                  <BookOpen className="h-5 w-5 text-primary" />
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{stats.totalBooks}</div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">in your collection</p>
+                <div className="text-2xl font-bold text-foreground mb-1">{stats.totalBooks}</div>
+                <p className="text-sm text-muted-foreground">in your collection</p>
               </div>
             </Link>
 
             <Link href="/library?status=reading">
               <div className="stat-card stat-card-emerald hover:shadow-lg transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Currently Reading</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">Currently Reading</h3>
                   <Clock className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{stats.currentlyReading}</div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">books in progress</p>
+                <div className="text-2xl font-bold text-foreground mb-1">{stats.currentlyReading}</div>
+                <p className="text-sm text-muted-foreground">books in progress</p>
               </div>
             </Link>
 
             <Link href="/library?status=read">
               <div className="stat-card stat-card-violet hover:shadow-lg transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Books Read</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">Books Read</h3>
                   <Target className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{stats.booksRead}</div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">completed this year</p>
+                <div className="text-2xl font-bold text-foreground mb-1">{stats.booksRead}</div>
+                <p className="text-sm text-muted-foreground">completed this year</p>
               </div>
             </Link>
 
             <Link href="/stats">
               <div className="stat-card stat-card-slate hover:shadow-lg transition-all cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Pages Read</h3>
-                  <TrendingUp className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                  <h3 className="text-sm font-medium text-muted-foreground">Pages Read</h3>
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                <div className="text-2xl font-bold text-foreground mb-1">
                   {stats.totalPages.toLocaleString()}
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">total pages</p>
+                <p className="text-sm text-muted-foreground">total pages</p>
               </div>
             </Link>
           </div>
@@ -224,8 +224,8 @@ export default function DashboardPage() {
               <CardContent>
                 {currentlyReading.length === 0 ? (
                   <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-500 dark:text-slate-400 mb-4">No books currently being read</p>
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">No books currently being read</p>
                     <Link href="/library">
                       <Button variant="outline">Browse Library</Button>
                     </Link>
@@ -234,8 +234,8 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     {currentlyReading.map((book) => (
                       <Link key={book.id} href={`/book/${book.id}`}>
-                        <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border">
-                          <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0">
+                        <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-accent transition-colors border">
+                          <div className="w-12 h-16 bg-primary-container rounded flex items-center justify-center flex-shrink-0">
                             {book.coverImage ? (
                               <img
                                 src={book.coverImage || "/placeholder.svg"}
@@ -243,17 +243,17 @@ export default function DashboardPage() {
                                 className="w-full h-full object-cover rounded"
                               />
                             ) : (
-                              <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                              <BookOpen className="h-6 w-6 text-primary" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-slate-900 dark:text-white truncate">{book.title}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                            <h3 className="font-medium text-foreground truncate">{book.title}</h3>
+                            <p className="text-sm text-muted-foreground truncate">
                               {book.authors.join(", ")}
                             </p>
                             {book.totalPages && (
                               <div className="mt-2">
-                                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                                   <span>
                                     {book.pagesRead || 0} / {book.totalPages} pages
                                   </span>
@@ -283,7 +283,7 @@ export default function DashboardPage() {
             <Card className="card-clean">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
-                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
+                  <Users className="h-5 w-5 text-primary mr-2" />
                   Quick Actions
                 </CardTitle>
                 <CardDescription>Manage your reading collection</CardDescription>
@@ -330,8 +330,8 @@ export default function DashboardPage() {
               <CardContent>
                 {recentBooks.length === 0 ? (
                   <div className="text-center py-6">
-                    <BookOpen className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">No recent activity</p>
+                    <BookOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground mb-3">No recent activity</p>
                     <Link href="/add-book">
                       <Button size="sm" className="btn-primary">
                         <Plus className="h-3 w-3 mr-1" />
@@ -343,13 +343,13 @@ export default function DashboardPage() {
                   <div className="space-y-3">
                     {recentBooks.slice(0, 4).map((book) => (
                       <Link key={book.id} href={`/book/${book.id}`}>
-                        <div className="flex items-center space-x-3 p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                          <div className="w-8 h-10 bg-blue-100 dark:bg-blue-900/50 rounded flex items-center justify-center flex-shrink-0">
-                            <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="flex items-center space-x-3 p-2 rounded hover:bg-accent transition-colors">
+                          <div className="w-8 h-10 bg-primary-container rounded flex items-center justify-center flex-shrink-0">
+                            <BookOpen className="h-4 w-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{book.title}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            <p className="text-sm font-medium text-foreground truncate">{book.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">
                               {book.authors.join(", ")}
                             </p>
                           </div>

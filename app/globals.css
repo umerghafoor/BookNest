@@ -2,50 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   BookNest — Material Expressive (Material 3 / Material You) design system
+   Color roles, shape scale, elevation, motion and state layers follow the
+   Material 3 spec so primitives + pages inherit the new look automatically.
+   ========================================================================== */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 98%;
-    --muted-foreground: 215 17% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 83% 60%;
+    /* --- M3 tonal source: expressive indigo/violet primary --- */
+    /* surfaces */
+    --background: 270 40% 99%;          /* surface */
+    --foreground: 270 10% 13%;          /* on-surface */
+    --card: 0 0% 100%;                  /* surface-container-low */
+    --card-foreground: 270 10% 13%;
+    --popover: 270 30% 98%;             /* surface-container */
+    --popover-foreground: 270 10% 13%;
+
+    /* primary role */
+    --primary: 256 62% 52%;             /* M3 primary */
+    --primary-foreground: 0 0% 100%;    /* on-primary */
+    --primary-container: 255 100% 93%;  /* primary-container */
+    --on-primary-container: 256 80% 24%;
+
+    /* secondary role */
+    --secondary: 255 30% 92%;           /* secondary-container */
+    --secondary-foreground: 256 30% 24%;
+
+    /* tertiary (expressive accent) */
+    --tertiary: 330 64% 50%;
+    --tertiary-container: 332 100% 92%;
+    --on-tertiary-container: 330 80% 24%;
+
+    /* muted / neutral */
+    --muted: 270 20% 95%;               /* surface-container-high */
+    --muted-foreground: 270 6% 42%;     /* on-surface-variant */
+
+    /* accent (used by hover/active surfaces) */
+    --accent: 255 45% 95%;
+    --accent-foreground: 256 40% 30%;
+
+    /* error role */
+    --destructive: 0 75% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 36% 91%;
-    --input: 210 36% 91%;
-    --ring: 221 83% 53%;
-    --radius: 0.5rem;
+
+    /* outline */
+    --border: 270 14% 86%;              /* outline-variant */
+    --input: 270 14% 82%;               /* outline */
+    --ring: 256 62% 52%;                /* focus ring = primary */
+
+    /* charts (M3 expressive palette) */
+    --chart-1: 256 62% 52%;
+    --chart-2: 330 64% 50%;
+    --chart-3: 190 75% 42%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 150 55% 42%;
+
+    /* sidebar (kept in sync with surface roles) */
+    --sidebar-background: 270 30% 98%;
+    --sidebar-foreground: 270 10% 13%;
+    --sidebar-primary: 256 62% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 255 45% 95%;
+    --sidebar-accent-foreground: 256 40% 30%;
+    --sidebar-border: 270 14% 86%;
+    --sidebar-ring: 256 62% 52%;
+
+    /* M3 expressive shape scale */
+    --radius: 1rem;                     /* base "large" corner */
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.75rem;
+    --radius-full: 9999px;
   }
 
   .dark {
-    --background: 223 85% 5%;
-    --foreground: 210 40% 98%;
-    --card: 225 72% 4%;
-    --card-foreground: 210 40% 98%;
-    --popover: 225 72% 4%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 47% 11%;
-    --muted-foreground: 215 22% 65%;
-    --accent: 222 47% 11%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 91% 71%;
-    --destructive-foreground: 223 85% 5%;
-    --border: 215 34% 17%;
-    --input: 215 34% 17%;
-    --ring: 217 91% 60%;
+    --background: 270 18% 9%;           /* surface */
+    --foreground: 270 12% 92%;          /* on-surface */
+    --card: 270 16% 13%;               /* surface-container-low */
+    --card-foreground: 270 12% 92%;
+    --popover: 270 16% 15%;            /* surface-container */
+    --popover-foreground: 270 12% 92%;
+
+    --primary: 255 90% 80%;            /* M3 primary (dark) */
+    --primary-foreground: 256 80% 18%; /* on-primary */
+    --primary-container: 256 45% 34%;
+    --on-primary-container: 255 100% 93%;
+
+    --secondary: 256 22% 26%;
+    --secondary-foreground: 255 60% 90%;
+
+    --tertiary: 332 90% 80%;
+    --tertiary-container: 330 40% 34%;
+    --on-tertiary-container: 332 100% 92%;
+
+    --muted: 270 14% 18%;
+    --muted-foreground: 270 10% 70%;
+
+    --accent: 256 22% 22%;
+    --accent-foreground: 255 60% 90%;
+
+    --destructive: 0 80% 72%;
+    --destructive-foreground: 0 60% 16%;
+
+    --border: 270 10% 28%;
+    --input: 270 10% 34%;
+    --ring: 255 90% 80%;
+
+    --chart-1: 255 90% 80%;
+    --chart-2: 332 90% 80%;
+    --chart-3: 190 80% 65%;
+    --chart-4: 38 95% 68%;
+    --chart-5: 150 60% 62%;
+
+    --sidebar-background: 270 16% 12%;
+    --sidebar-foreground: 270 12% 92%;
+    --sidebar-primary: 255 90% 80%;
+    --sidebar-primary-foreground: 256 80% 18%;
+    --sidebar-accent: 256 22% 22%;
+    --sidebar-accent-foreground: 255 60% 90%;
+    --sidebar-border: 270 10% 28%;
+    --sidebar-ring: 255 90% 80%;
   }
 }
 
@@ -54,43 +133,103 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* M3 expressive type scale */
+  h1 { letter-spacing: -0.015em; }
+  h2 { letter-spacing: -0.01em; }
+}
+
+/* ============================================================================
+   Material 3 elevation tiers (tonal + shadow)
+   ========================================================================== */
+@layer components {
+  .m3-elevation-1 {
+    box-shadow:
+      0 1px 2px 0 hsl(270 10% 13% / 0.10),
+      0 1px 3px 1px hsl(270 10% 13% / 0.07);
+  }
+  .m3-elevation-2 {
+    box-shadow:
+      0 1px 2px 0 hsl(270 10% 13% / 0.12),
+      0 2px 6px 2px hsl(270 10% 13% / 0.08);
+  }
+  .m3-elevation-3 {
+    box-shadow:
+      0 4px 8px 3px hsl(270 10% 13% / 0.10),
+      0 1px 3px 0 hsl(270 10% 13% / 0.12);
+  }
+
+  /* M3 state-layer: subtle tonal hover/press overlay on interactive surfaces */
+  .m3-state-layer {
+    position: relative;
+    isolation: isolate;
+  }
+  .m3-state-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 150ms cubic-bezier(0.2, 0, 0, 1);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .m3-state-layer:hover::after { opacity: 0.08; }
+  .m3-state-layer:active::after { opacity: 0.12; }
+
+  /* Expressive surface containers */
+  .m3-surface {
+    @apply bg-card text-card-foreground rounded-[var(--radius-lg)] m3-elevation-1;
+  }
+  .m3-surface-tonal {
+    background: hsl(var(--primary-container));
+    color: hsl(var(--on-primary-container));
+    @apply rounded-[var(--radius-lg)];
+  }
+
+  /* Material expressive gradient text for hero headings */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-[hsl(var(--tertiary))] to-primary bg-clip-text text-transparent;
   }
 }
 
-/* Clean, minimal design system */
+/* ============================================================================
+   Backwards-compatible utility classes (kept so existing pages don't break,
+   now mapped onto Material 3 roles).
+   ========================================================================== */
 .card-elevated {
-  @apply bg-white dark:bg-card border border-border shadow-sm hover:shadow-md transition-shadow duration-200;
+  @apply bg-card border border-border rounded-[var(--radius-lg)] m3-elevation-1 hover:m3-elevation-2 transition-shadow duration-200;
 }
 
 .btn-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200;
+  @apply bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2.5 rounded-full transition-all duration-200 m3-state-layer;
 }
 
 .btn-secondary {
-  @apply bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium px-4 py-2 rounded-lg transition-colors duration-200;
-}
-
-.text-gradient {
-  @apply bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent;
+  @apply bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium px-6 py-2.5 rounded-full transition-all duration-200 m3-state-layer;
 }
 
 .stat-card {
-  @apply bg-white dark:bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-300;
+  @apply bg-card border border-border rounded-[var(--radius-lg)] p-6 m3-elevation-1 hover:m3-elevation-2 transition-all duration-300;
 }
 
 .stat-card-blue {
-  @apply bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800;
+  background: linear-gradient(135deg, hsl(var(--primary-container)), hsl(var(--primary-container) / 0.6));
+  @apply border-transparent;
 }
-
 .stat-card-emerald {
-  @apply bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 dark:border-emerald-800;
+  background: linear-gradient(135deg, hsl(150 60% 90%), hsl(150 60% 82%));
+  @apply border-transparent dark:bg-none dark:bg-[hsl(150_30%_22%)];
 }
-
 .stat-card-violet {
-  @apply bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950 dark:to-violet-900 border-violet-200 dark:border-violet-800;
+  background: linear-gradient(135deg, hsl(var(--primary-container)), hsl(280 80% 90%));
+  @apply border-transparent;
 }
-
 .stat-card-amber {
-  @apply bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800;
+  background: linear-gradient(135deg, hsl(38 95% 90%), hsl(38 95% 82%));
+  @apply border-transparent dark:bg-none dark:bg-[hsl(38_40%_24%)];
 }
